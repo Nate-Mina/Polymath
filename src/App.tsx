@@ -27,6 +27,20 @@ export default function App() {
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswerRecord>>({});
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState<boolean>(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
+  const [sessionSeconds, setSessionSeconds] = useState<number>(0);
+
+  // Real-time session elapsed timer
+  useEffect(() => {
+    let interval: any;
+    if (appStage === 'testing') {
+      interval = setInterval(() => {
+        setSessionSeconds((prev) => prev + 1);
+      }, 1000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [appStage]);
 
   // Load saved session if exists
   useEffect(() => {
@@ -70,6 +84,7 @@ export default function App() {
     setTargetFieldId(fieldId);
     setActiveQuestions(questions);
     setCurrentIndex(0);
+    setSessionSeconds(0);
     setAppStage('testing');
   };
 
@@ -141,6 +156,7 @@ export default function App() {
     }
     setAppStage('setup');
     setCurrentIndex(0);
+    setSessionSeconds(0);
   };
 
   const handleRetake = () => {
@@ -151,6 +167,7 @@ export default function App() {
       // ignore
     }
     setCurrentIndex(0);
+    setSessionSeconds(0);
     setAppStage('testing');
   };
 
@@ -165,10 +182,12 @@ export default function App() {
       const filteredQs = ALL_QUESTIONS.filter((q) => weakFieldIds.includes(q.fieldId));
       setActiveQuestions(filteredQs);
       setCurrentIndex(0);
+      setSessionSeconds(0);
       setAppStage('testing');
     } else {
       setActiveQuestions(ALL_QUESTIONS);
       setCurrentIndex(0);
+      setSessionSeconds(0);
       setAppStage('testing');
     }
   };
@@ -239,6 +258,8 @@ export default function App() {
               question={currentQuestion}
               currentIndex={currentIndex}
               totalQuestions={activeQuestions.length}
+              answeredCount={Object.values(userAnswers).filter((a) => a.selectedOption !== null && a.selectedOption !== undefined).length}
+              sessionSeconds={sessionSeconds}
               userAnswer={userAnswers[currentQuestion.id]}
               feedbackTiming={feedbackTiming}
               onSelectOption={handleSelectOption}

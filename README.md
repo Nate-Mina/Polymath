@@ -226,7 +226,8 @@ This project is pre-configured with relative asset paths (`base: './'` in `vite.
 1. Push your repository to GitHub.
 2. In your GitHub repository, navigate to **Settings** > **Pages**.
 3. Under **Build and deployment** > **Source**, select **GitHub Actions**.
-4. The included workflow in `.github/workflows/deploy.yml` will automatically build and publish your site upon every push to the `main` branch.
+4. The included workflow in `.github/workflows/deploy.yml` automatically installs dependencies using `npm ci` (leveraging the root `package-lock.json` and Node cache) and builds the site with `npm run build` on every push to the `main` branch.
+5. GitHub Pages will serve the static bundle directly from the uploaded artifact with zero server overhead.
 
 ### Method 2: Manual Deployment via `gh-pages`
 

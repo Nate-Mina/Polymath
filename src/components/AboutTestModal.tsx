@@ -21,7 +21,7 @@ export const AboutTestModal: React.FC<AboutTestModalProps> = ({ isOpen, onClose 
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-100 tracking-tight">
-                About the Polymath Aptitude Assessment
+                About the Polymath Multidisciplinary Aptitude Assessment
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Psychometric framework, 20 academic curricula, and Renaissance Quotient formulation
