@@ -1,0 +1,8 @@
+{
+  "name": "Polymath Multidisciplinary Aptitude Assessment",
+  "description": "Comprehensive diagnostic aptitude evaluation testing intellectual breadth and technical depth across 20 university-level disciplines with interactive 20-axis radar telemetry.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
