@@ -39,7 +39,23 @@ export interface UserAnswerRecord {
 export type AssessmentScope = 'full' | 'technical' | 'humanities' | 'single-field' | 'partial';
 export type FeedbackTiming = 'instant' | 'exam';
 
+export interface DisciplinePacing {
+  disciplineId: string;
+  disciplineName: string;
+  shortName: string;
+  domainType: DomainType;
+  totalSeconds: number;
+  questionCount: number;
+  avgSecondsPerQ: number;
+  ratioToMean: number; // e.g. 1.45 (+45% above average)
+  isOutlier: boolean; // Spent significantly more time than average (>= 1.35x mean)
+  paceClassification: 'rapid' | 'balanced' | 'deliberate' | 'outlier';
+  questionTimes: { questionId: string; subtopic: string; difficulty: Difficulty; seconds: number }[];
+}
+
 export interface PolymathEvaluation {
+  candidateName?: string;
+  confidenceScore: number; // 0 - 100 confidence score of being a true polymath
   totalQuestions: number;
   answeredCount: number;
   correctCount: number;
@@ -75,4 +91,5 @@ export interface PolymathEvaluation {
   topStrengths: string[];
   growthAreas: string[];
   balanceIndex: number; // Variance across fields (lower variance = higher polymathic balance)
+  disciplinePacing?: DisciplinePacing[];
 }

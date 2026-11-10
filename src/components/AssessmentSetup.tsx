@@ -15,9 +15,12 @@ import {
   HelpCircle,
   Sliders,
   RotateCcw,
+  User,
 } from 'lucide-react';
 
 interface AssessmentSetupProps {
+  candidateName: string;
+  onCandidateNameChange: (name: string) => void;
   onStart: (
     scope: AssessmentScope,
     timing: FeedbackTiming,
@@ -30,6 +33,8 @@ interface AssessmentSetupProps {
 }
 
 export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
+  candidateName,
+  onCandidateNameChange,
   onStart,
   hasSavedSession,
   onResumeSession,
@@ -157,6 +162,34 @@ export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
             </button>
           </div>
         )}
+      </div>
+
+      {/* Candidate Identity Card */}
+      <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl shadow-md space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label htmlFor="candidate-name-input" className="flex items-center gap-2 text-sm font-semibold text-slate-100">
+            <User className="w-4 h-4 text-cyan-400" />
+            <span>Candidate Identity for Official Diploma &amp; Audit Transcript</span>
+          </label>
+          <span className="text-xs text-slate-400 font-mono">
+            {candidateName.trim() ? 'Custom Scholar Inscription' : 'Default: Guest Scholar'}
+          </span>
+        </div>
+
+        <div className="relative">
+          <input
+            id="candidate-name-input"
+            type="text"
+            value={candidateName}
+            onChange={(e) => onCandidateNameChange(e.target.value)}
+            placeholder="e.g. Leonardo da Vinci (or leave blank for Guest Scholar)"
+            maxLength={60}
+            className="w-full px-4 py-3 bg-slate-950 border border-slate-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-xl text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors"
+          />
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed">
+          Your name will be inscribed upon your verified PDF Certificate of Polymathy and comprehensive question audit upon completion.
+        </p>
       </div>
 
       {/* Configuration Grid */}

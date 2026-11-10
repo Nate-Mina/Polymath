@@ -22,6 +22,7 @@ export default function App() {
   const [feedbackTiming, setFeedbackTiming] = useState<FeedbackTiming>('instant');
   const [targetFieldId, setTargetFieldId] = useState<string | undefined>(undefined);
 
+  const [candidateName, setCandidateName] = useState<string>('');
   const [activeQuestions, setActiveQuestions] = useState<Question[]>(ALL_QUESTIONS);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswerRecord>>({});
@@ -29,18 +30,35 @@ export default function App() {
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
   const [sessionSeconds, setSessionSeconds] = useState<number>(0);
 
-  // Real-time session elapsed timer
+  // Real-time session elapsed timer & active question pacing
   useEffect(() => {
     let interval: any;
     if (appStage === 'testing') {
       interval = setInterval(() => {
         setSessionSeconds((prev) => prev + 1);
+
+        // Keep current question active deliberation time incremented in real time
+        setUserAnswers((prev) => {
+          const currentQ = activeQuestions[currentIndex];
+          if (!currentQ) return prev;
+          const existing = prev[currentQ.id];
+          return {
+            ...prev,
+            [currentQ.id]: {
+              questionId: currentQ.id,
+              selectedOption: existing ? existing.selectedOption : null,
+              isFlagged: existing ? existing.isFlagged : false,
+              timeSpentSec: (existing?.timeSpentSec || 0) + 1,
+              submittedAt: existing?.submittedAt,
+            },
+          };
+        });
       }, 1000);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [appStage]);
+  }, [appStage, activeQuestions, currentIndex]);
 
   // Load saved session if exists
   useEffect(() => {
@@ -51,6 +69,9 @@ export default function App() {
         if (parsed.userAnswers && Object.keys(parsed.userAnswers).length > 0) {
           setUserAnswers(parsed.userAnswers);
         }
+        if (parsed.candidateName) {
+          setCandidateName(parsed.candidateName);
+        }
       }
     } catch (e) {
       console.warn('Failed to parse saved assessment session', e);
@@ -58,11 +79,12 @@ export default function App() {
   }, []);
 
   // Save session to localStorage
-  const persistSession = (answers: Record<string, UserAnswerRecord>) => {
+  const persistSession = (answers: Record<string, UserAnswerRecord>, name?: string) => {
     try {
       localStorage.setItem(
         LOCAL_STORAGE_KEY,
         JSON.stringify({
+          candidateName: name !== undefined ? name : candidateName,
           userAnswers: answers,
           updatedAt: Date.now(),
         })
@@ -222,7 +244,7 @@ export default function App() {
   }, [handleKeyDown]);
 
   const currentQuestion = activeQuestions[currentIndex];
-  const evaluation: PolymathEvaluation = calculatePolymathEvaluation(activeQuestions, userAnswers);
+  const evaluation: PolymathEvaluation = calculatePolymathEvaluation(activeQuestions, userAnswers, candidateName);
   const savedAnswerCount = Object.keys(userAnswers).length;
 
   return (
@@ -245,6 +267,11 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
         {appStage === 'setup' && (
           <AssessmentSetup
+            candidateName={candidateName}
+            onCandidateNameChange={(name) => {
+              setCandidateName(name);
+              persistSession(userAnswers, name);
+            }}
             onStart={handleStartAssessment}
             hasSavedSession={savedAnswerCount > 0}
             onResumeSession={handleResumeSession}
@@ -287,6 +314,8 @@ export default function App() {
             evaluation={evaluation}
             questions={activeQuestions}
             userAnswers={userAnswers}
+            candidateName={candidateName}
+            totalSessionSeconds={sessionSeconds}
             onRetake={handleRetake}
             onRetestWeakFields={handleRetestWeakFields}
           />

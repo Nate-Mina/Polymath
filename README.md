@@ -32,6 +32,9 @@ A rigorous psychometric and technical diagnostic testing engine designed to meas
   - **Renaissance Quotient (0–100) & Archetype Classifier**: Evaluates breadth of competence, technical-to-humanities balance, and depth of hard problem mastery (*Homo Universalis*, *Renaissance Scholar*, *Broad Generalist*, *STEM Polymath*, etc.).
   - **Domain Mastery Cards**: Granular cards with accuracy percentages, difficulty tier indicators, and direct question navigation.
   - **Comprehensive Answer Audit**: Filterable review of all problems with full scientific rationales and core principles.
+  - **D3 Performance Pacing & Deliberation Heatmap**: Mathematical D3 scale interpolation mapping time invested per academic discipline relative to session mean, detecting cognitive deliberation bottlenecks and pacing outliers (> 135% of average).
+  - **Official Diploma Certificate & Exam Audit PDF Exporter**: One-click generation of a multi-page, publication-grade PDF featuring an executive diploma with polymath confidence score, verified credential ID, and complete question-by-question audit with candidate selections, verified answers, correctness indicators, and scientific rationales.
+  - **Candidate Identity Onboarding**: Candidate name intake field on test setup inscribed onto the official diploma and diagnostic exam transcripts.
   - **One-Click Share Results**: Generates formatted ASCII summaries and social cards of radar scores directly to the clipboard.
   - **Local Persistence & Hotkeys**: Seamless session saving in `localStorage` and keyboard shortcuts (`A`–`D`, `1`–`4`, `←`/`→`, `M` for question map).
 

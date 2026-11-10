@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { PolymathEvaluation, Question, UserAnswerRecord } from '../types/polymath';
 import { PolymathRadarChart } from './PolymathRadarChart';
 import { DomainMasteryGrid } from './DomainMasteryGrid';
+import { PerformanceHeatmap } from './PerformanceHeatmap';
 import { ShareResultsModal } from './ShareResultsModal';
 import { generateShareableResultsSnippet, copyToClipboard } from '../utils/shareResults';
+import { exportPolymathCertificateAndAuditPdf } from '../utils/pdfCertificateExport';
 import {
   Award,
   CheckCircle2,
@@ -20,6 +22,8 @@ import {
   Compass,
   ArrowRight,
   Check,
+  FileDown,
+  User,
 } from 'lucide-react';
 
 interface PolymathReportViewProps {
@@ -28,6 +32,8 @@ interface PolymathReportViewProps {
   userAnswers: Record<string, UserAnswerRecord>;
   onRetake: () => void;
   onRetestWeakFields: () => void;
+  candidateName?: string;
+  totalSessionSeconds?: number;
 }
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
@@ -38,12 +44,33 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
   userAnswers,
   onRetake,
   onRetestWeakFields,
+  candidateName,
+  totalSessionSeconds = 0,
 }) => {
   const [activeTab, setActiveTab] = useState<'visualizations' | 'audit'>('visualizations');
   const [auditFilter, setAuditFilter] = useState<'all' | 'incorrect' | 'correct' | 'flagged'>('all');
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+
+  const effectiveCandidateName = candidateName?.trim() || evaluation.candidateName || 'Guest Scholar';
+
+  const handleExportPdf = () => {
+    setIsExportingPdf(true);
+    try {
+      exportPolymathCertificateAndAuditPdf(
+        evaluation,
+        questions,
+        userAnswers,
+        effectiveCandidateName
+      );
+    } catch (err) {
+      console.error('Error generating PDF report:', err);
+    } finally {
+      setTimeout(() => setIsExportingPdf(false), 800);
+    }
+  };
 
   // Filter audit questions
   const filteredAuditQuestions = questions.filter((q) => {
@@ -83,6 +110,18 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
               <span>20 DEGREE DISCIPLINES</span>
             </div>
 
+            <div className="flex flex-wrap items-center gap-3 text-xs font-mono">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-slate-950 border border-slate-800 text-slate-200">
+                <User className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Candidate: <strong className="text-white">{effectiveCandidateName}</strong></span>
+              </span>
+
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-emerald-950/60 border border-emerald-800 text-emerald-300">
+                <Award className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Polymath Confidence: <strong>{evaluation.confidenceScore}%</strong></span>
+              </span>
+            </div>
+
             <div>
               <span className="text-xs uppercase tracking-widest font-mono text-amber-400 px-2.5 py-1 rounded bg-amber-950/80 border border-amber-800 inline-block mb-2">
                 {evaluation.archetype.badge}
@@ -106,7 +145,7 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
               {evaluation.polymathQuotient}
             </div>
             <span className="text-xs text-slate-400 font-mono">
-              Scale 0–100 · High Breadth
+              Scale 0–100 · Confidence: {evaluation.confidenceScore}%
             </span>
 
             <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden mt-3 border border-slate-800">
@@ -192,14 +231,25 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
 
         {/* Action Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Export PDF Button */}
+            <button
+              onClick={handleExportPdf}
+              disabled={isExportingPdf}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition-colors shadow-md shadow-cyan-950/40 cursor-pointer disabled:opacity-50"
+              title="Download formal diploma certificate and question-by-question audit as PDF"
+            >
+              <FileDown className="w-3.5 h-3.5" />
+              <span>{isExportingPdf ? 'Compiling PDF Diploma & Audit...' : 'Export Certificate & Full Audit (PDF)'}</span>
+            </button>
+
             <button
               onClick={handleCopySummary}
-              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-slate-950 bg-gradient-to-r from-cyan-400 to-amber-400 hover:from-cyan-300 hover:to-amber-300 shadow-md shadow-cyan-950/40 transition-all cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-medium rounded-lg text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors cursor-pointer"
               title="Copy formatted radar scores and evaluation summary to clipboard"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span>{copiedLink ? 'Results Copied to Clipboard!' : 'Share Results'}</span>
+              <span>{copiedLink ? 'Copied to Clipboard!' : 'Share Results'}</span>
             </button>
 
             <button
@@ -270,7 +320,15 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
             <PolymathRadarChart domainScores={evaluation.domainScores} />
           </div>
 
-          {/* Section 2: Domain Mastery Cards Grid */}
+          {/* Section 2: D3 Performance Pacing & Deliberation Heatmap */}
+          <div className="pt-6 border-t border-slate-800/80">
+            <PerformanceHeatmap
+              disciplinePacing={evaluation.disciplinePacing}
+              totalSessionSeconds={totalSessionSeconds}
+            />
+          </div>
+
+          {/* Section 3: Domain Mastery Cards Grid */}
           <div className="space-y-3 pt-6 border-t border-slate-800/80">
             <div className="flex items-center justify-between">
               <div>

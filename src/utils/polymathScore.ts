@@ -3,7 +3,8 @@ import { DISCIPLINES, DISCIPLINE_MAP } from '../data/disciplines';
 
 export function calculatePolymathEvaluation(
   questions: Question[],
-  userAnswers: Record<string, UserAnswerRecord>
+  userAnswers: Record<string, UserAnswerRecord>,
+  candidateName?: string
 ): PolymathEvaluation {
   const totalQuestions = questions.length;
   let answeredCount = 0;
@@ -199,12 +200,88 @@ export function calculatePolymathEvaluation(
     };
   }
 
+  // Confidence score of polymathy (0 to 100%)
+  const confidenceScore = Math.min(
+    100,
+    Math.max(
+      0,
+      Math.round(
+        polymathQuotient * 0.50 +
+        breadthScore * 0.25 +
+        crossBalanceRatio * 0.15 +
+        (answeredCount >= 20 ? 10 : (answeredCount / Math.max(1, totalQuestions)) * 10)
+      )
+    )
+  );
+
+  // Calculate pacing per discipline
+  const pacingByField: Record<
+    string,
+    { totalSeconds: number; questions: { questionId: string; subtopic: string; difficulty: import('../types/polymath').Difficulty; seconds: number }[] }
+  > = {};
+
+  questions.forEach((q) => {
+    if (!pacingByField[q.fieldId]) {
+      pacingByField[q.fieldId] = { totalSeconds: 0, questions: [] };
+    }
+    const ans = userAnswers[q.id];
+    const timeSpent = Math.max(1, ans?.timeSpentSec || 0);
+    pacingByField[q.fieldId].totalSeconds += timeSpent;
+    pacingByField[q.fieldId].questions.push({
+      questionId: q.id,
+      subtopic: q.subtopic,
+      difficulty: q.difficulty,
+      seconds: timeSpent,
+    });
+  });
+
+  const disciplineEntries = Object.keys(domainScores).map((fId) => {
+    const d = domainScores[fId];
+    const pacing = pacingByField[fId] || { totalSeconds: 0, questions: [] };
+    const qCount = d.total || 1;
+    const avgSecondsPerQ = Math.round(pacing.totalSeconds / qCount);
+    return {
+      disciplineId: fId,
+      disciplineName: d.discipline.name,
+      shortName: d.discipline.shortName,
+      domainType: d.discipline.type,
+      totalSeconds: pacing.totalSeconds,
+      questionCount: qCount,
+      avgSecondsPerQ,
+      questionTimes: pacing.questions,
+    };
+  });
+
+  const totalDeliberationSec = disciplineEntries.reduce((sum, e) => sum + e.totalSeconds, 0);
+  const overallMeanSeconds = disciplineEntries.length > 0 ? totalDeliberationSec / disciplineEntries.length : 1;
+
+  const disciplinePacing: import('../types/polymath').DisciplinePacing[] = disciplineEntries.map((e) => {
+    const ratioToMean = overallMeanSeconds > 0 ? Number((e.totalSeconds / overallMeanSeconds).toFixed(2)) : 1.0;
+    const isOutlier = ratioToMean >= 1.35; // Significantly more time than average
+    let paceClassification: 'rapid' | 'balanced' | 'deliberate' | 'outlier' = 'balanced';
+    if (isOutlier) {
+      paceClassification = 'outlier';
+    } else if (ratioToMean >= 1.15) {
+      paceClassification = 'deliberate';
+    } else if (ratioToMean <= 0.75) {
+      paceClassification = 'rapid';
+    }
+    return {
+      ...e,
+      ratioToMean,
+      isOutlier,
+      paceClassification,
+    };
+  });
+
   // Top Strengths & Growth Areas
   const sortedDomains = Object.entries(domainScores).sort((a, b) => b[1].percentage - a[1].percentage);
   const topStrengths = sortedDomains.slice(0, 3).map(([_, d]) => d.discipline.name);
   const growthAreas = sortedDomains.slice(-3).reverse().map(([_, d]) => d.discipline.name);
 
   return {
+    candidateName,
+    confidenceScore,
     totalQuestions,
     answeredCount,
     correctCount,
@@ -224,5 +301,6 @@ export function calculatePolymathEvaluation(
     topStrengths,
     growthAreas,
     balanceIndex,
+    disciplinePacing,
   };
 }
