@@ -1,0 +1,120 @@
+﻿2026-11-10T02:09:02.3794710Z ##[group]Run npm ci
+2026-11-10T02:09:02.3794960Z [36;1mnpm ci[0m
+2026-11-10T02:09:02.3840932Z shell: /usr/bin/bash -e {0}
+2026-11-10T02:09:02.3841159Z ##[endgroup]
+2026-11-10T02:09:04.4657226Z npm error code EUSAGE
+2026-11-10T02:09:04.4669807Z npm error
+2026-11-10T02:09:04.4670793Z npm error `npm ci` can only install packages when your package.json and package-lock.json or npm-shrinkwrap.json are in sync. Please update your lock file with `npm install` before continuing.
+2026-11-10T02:09:04.4671502Z npm error
+2026-11-10T02:09:04.4671782Z npm error Missing: @types/d3@7.4.3 from lock file
+2026-11-10T02:09:04.4672139Z npm error Missing: d3@7.9.2 from lock file
+2026-11-10T02:09:04.4672475Z npm error Missing: jspdf@4.2.1 from lock file
+2026-11-10T02:09:04.4672842Z npm error Missing: @types/d3-array@3.2.2 from lock file
+2026-11-10T02:09:04.4673284Z npm error Missing: @types/d3-axis@3.0.6 from lock file
+2026-11-10T02:09:04.4673675Z npm error Missing: @types/d3-brush@3.0.6 from lock file
+2026-11-10T02:09:04.4674099Z npm error Missing: @types/d3-chord@3.0.6 from lock file
+2026-11-10T02:09:04.4674446Z npm error Missing: @types/d3-color@3.1.3 from lock file
+2026-11-10T02:09:04.4674819Z npm error Missing: @types/d3-contour@3.0.6 from lock file
+2026-11-10T02:09:04.4675227Z npm error Missing: @types/d3-delaunay@6.0.4 from lock file
+2026-11-10T02:09:04.4675623Z npm error Missing: @types/d3-dispatch@3.0.7 from lock file
+2026-11-10T02:09:04.4676023Z npm error Missing: @types/d3-drag@3.0.7 from lock file
+2026-11-10T02:09:04.4676382Z npm error Missing: @types/d3-dsv@3.0.7 from lock file
+2026-11-10T02:09:04.4676726Z npm error Missing: @types/d3-ease@3.0.2 from lock file
+2026-11-10T02:09:04.4677059Z npm error Missing: @types/d3-fetch@3.0.7 from lock file
+2026-11-10T02:09:04.4677337Z npm error Missing: @types/d3-force@3.0.10 from lock file
+2026-11-10T02:09:04.4677558Z npm error Missing: @types/d3-format@3.0.4 from lock file
+2026-11-10T02:09:04.4677775Z npm error Missing: @types/d3-geo@3.1.1 from lock file
+2026-11-10T02:09:04.4678000Z npm error Missing: @types/d3-hierarchy@3.1.7 from lock file
+2026-11-10T02:09:04.4678248Z npm error Missing: @types/d3-interpolate@3.0.4 from lock file
+2026-11-10T02:09:04.4678483Z npm error Missing: @types/d3-path@3.1.1 from lock file
+2026-11-10T02:09:04.4678955Z npm error Missing: @types/d3-polygon@3.0.2 from lock file
+2026-11-10T02:09:04.4679361Z npm error Missing: @types/d3-quadtree@3.0.6 from lock file
+2026-11-10T02:09:04.4679630Z npm error Missing: @types/d3-random@3.0.4 from lock file
+2026-11-10T02:09:04.4679853Z npm error Missing: @types/d3-scale@4.0.9 from lock file
+2026-11-10T02:09:04.4680132Z npm error Missing: @types/d3-scale-chromatic@3.1.0 from lock file
+2026-11-10T02:09:04.4680494Z npm error Missing: @types/d3-selection@3.0.12 from lock file
+2026-11-10T02:09:04.4680830Z npm error Missing: @types/d3-shape@3.2.0 from lock file
+2026-11-10T02:09:04.4681166Z npm error Missing: @types/d3-time@3.0.4 from lock file
+2026-11-10T02:09:04.4681581Z npm error Missing: @types/d3-time-format@4.0.3 from lock file
+2026-11-10T02:09:04.4681964Z npm error Missing: @types/d3-timer@3.0.2 from lock file
+2026-11-10T02:09:04.4682326Z npm error Missing: @types/d3-transition@3.0.9 from lock file
+2026-11-10T02:09:04.4682683Z npm error Missing: @types/d3-zoom@3.0.9 from lock file
+2026-11-10T02:09:04.4683037Z npm error Missing: @types/geojson@7946.0.16 from lock file
+2026-11-10T02:09:04.4683369Z npm error Missing: d3-array@3.2.5 from lock file
+2026-11-10T02:09:04.4683678Z npm error Missing: d3-axis@3.0.1 from lock file
+2026-11-10T02:09:04.4683981Z npm error Missing: d3-brush@3.0.1 from lock file
+2026-11-10T02:09:04.4684282Z npm error Missing: d3-chord@3.0.2 from lock file
+2026-11-10T02:09:04.4684585Z npm error Missing: d3-color@3.1.1 from lock file
+2026-11-10T02:09:04.4684892Z npm error Missing: d3-contour@4.0.3 from lock file
+2026-11-10T02:09:04.4685210Z npm error Missing: d3-delaunay@6.0.6 from lock file
+2026-11-10T02:09:04.4685533Z npm error Missing: d3-dispatch@3.0.2 from lock file
+2026-11-10T02:09:04.4685843Z npm error Missing: d3-drag@3.0.1 from lock file
+2026-11-10T02:09:04.4686378Z npm error Missing: d3-dsv@3.0.2 from lock file
+2026-11-10T02:09:04.4686677Z npm error Missing: d3-ease@3.0.2 from lock file
+2026-11-10T02:09:04.4686978Z npm error Missing: d3-fetch@3.0.2 from lock file
+2026-11-10T02:09:04.4687287Z npm error Missing: d3-force@3.0.1 from lock file
+2026-11-10T02:09:04.4687599Z npm error Missing: d3-format@3.1.3 from lock file
+2026-11-10T02:09:04.4687930Z npm error Missing: d3-geo@3.1.2 from lock file
+2026-11-10T02:09:04.4688243Z npm error Missing: d3-hierarchy@3.1.3 from lock file
+2026-11-10T02:09:04.4688579Z npm error Missing: d3-interpolate@3.0.2 from lock file
+2026-11-10T02:09:04.4688895Z npm error Missing: d3-path@3.1.1 from lock file
+2026-11-10T02:09:04.4689320Z npm error Missing: d3-polygon@3.0.2 from lock file
+2026-11-10T02:09:04.4689641Z npm error Missing: d3-quadtree@3.0.2 from lock file
+2026-11-10T02:09:04.4689956Z npm error Missing: d3-random@3.0.2 from lock file
+2026-11-10T02:09:04.4690267Z npm error Missing: d3-scale@4.0.3 from lock file
+2026-11-10T02:09:04.4690606Z npm error Missing: d3-scale-chromatic@3.1.1 from lock file
+2026-11-10T02:09:04.4690948Z npm error Missing: d3-selection@3.0.1 from lock file
+2026-11-10T02:09:04.4691270Z npm error Missing: d3-shape@3.2.1 from lock file
+2026-11-10T02:09:04.4691570Z npm error Missing: d3-time@3.1.1 from lock file
+2026-11-10T02:09:04.4691893Z npm error Missing: d3-time-format@4.1.1 from lock file
+2026-11-10T02:09:04.4692268Z npm error Missing: d3-timer@3.0.2 from lock file
+2026-11-10T02:09:04.4692624Z npm error Missing: d3-transition@3.0.2 from lock file
+2026-11-10T02:09:04.4692941Z npm error Missing: d3-zoom@3.0.1 from lock file
+2026-11-10T02:09:04.4693247Z npm error Missing: internmap@2.0.3 from lock file
+2026-11-10T02:09:04.4693565Z npm error Missing: delaunator@5.1.0 from lock file
+2026-11-10T02:09:04.4693877Z npm error Missing: commander@7.2.0 from lock file
+2026-11-10T02:09:04.4694191Z npm error Missing: iconv-lite@0.6.3 from lock file
+2026-11-10T02:09:04.4694507Z npm error Missing: rw@1.3.3 from lock file
+2026-11-10T02:09:04.4694832Z npm error Missing: robust-predicates@3.0.3 from lock file
+2026-11-10T02:09:04.4695181Z npm error Missing: @babel/runtime@7.29.13 from lock file
+2026-11-10T02:09:04.4695620Z npm error Missing: canvg@3.0.11 from lock file
+2026-11-10T02:09:04.4695934Z npm error Missing: core-js@3.51.0 from lock file
+2026-11-10T02:09:04.4696250Z npm error Missing: dompurify@3.4.17 from lock file
+2026-11-10T02:09:04.4696562Z npm error Missing: fast-png@6.4.0 from lock file
+2026-11-10T02:09:04.4696865Z npm error Missing: fflate@0.8.3 from lock file
+2026-11-10T02:09:04.4697187Z npm error Missing: html2canvas@1.4.1 from lock file
+2026-11-10T02:09:04.4697506Z npm error Missing: @types/raf@3.4.3 from lock file
+2026-11-10T02:09:04.4697850Z npm error Missing: raf@3.4.1 from lock file
+2026-11-10T02:09:04.4698202Z npm error Missing: regenerator-runtime@0.13.11 from lock file
+2026-11-10T02:09:04.4698545Z npm error Missing: rgbcolor@1.0.1 from lock file
+2026-11-10T02:09:04.4698888Z npm error Missing: stackblur-canvas@2.7.0 from lock file
+2026-11-10T02:09:04.4699335Z npm error Missing: svg-pathdata@6.0.3 from lock file
+2026-11-10T02:09:04.4699695Z npm error Missing: @types/trusted-types@2.0.7 from lock file
+2026-11-10T02:09:04.4700058Z npm error Missing: @types/pako@2.0.4 from lock file
+2026-11-10T02:09:04.4700376Z npm error Missing: iobuffer@5.4.0 from lock file
+2026-11-10T02:09:04.4700680Z npm error Missing: pako@2.2.0 from lock file
+2026-11-10T02:09:04.4701005Z npm error Missing: css-line-break@2.1.0 from lock file
+2026-11-10T02:09:04.4701361Z npm error Missing: text-segmentation@1.0.3 from lock file
+2026-11-10T02:09:04.4701692Z npm error Missing: utrie@1.0.2 from lock file
+2026-11-10T02:09:04.4702027Z npm error Missing: performance-now@2.1.0 from lock file
+2026-11-10T02:09:04.4702386Z npm error Missing: base64-arraybuffer@1.0.2 from lock file
+2026-11-10T02:09:04.4702651Z npm error
+2026-11-10T02:09:04.4702864Z npm error Clean install a project
+2026-11-10T02:09:04.4703216Z npm error
+2026-11-10T02:09:04.4703387Z npm error Usage:
+2026-11-10T02:09:04.4703570Z npm error npm ci
+2026-11-10T02:09:04.4703746Z npm error
+2026-11-10T02:09:04.4703928Z npm error Options:
+2026-11-10T02:09:04.4704307Z npm error [--install-strategy <hoisted|nested|shallow|linked>] [--legacy-bundling]
+2026-11-10T02:09:04.4704842Z npm error [--global-style] [--omit <dev|optional|peer> [--omit <dev|optional|peer> ...]]
+2026-11-10T02:09:04.4705383Z npm error [--include <prod|dev|optional|peer> [--include <prod|dev|optional|peer> ...]]
+2026-11-10T02:09:04.4705928Z npm error [--strict-peer-deps] [--foreground-scripts] [--ignore-scripts] [--no-audit]
+2026-11-10T02:09:04.4706348Z npm error [--no-bin-links] [--no-fund] [--dry-run]
+2026-11-10T02:09:04.4706780Z npm error [-w|--workspace <workspace-name> [-w|--workspace <workspace-name> ...]]
+2026-11-10T02:09:04.4707265Z npm error [-ws|--workspaces] [--include-workspace-root] [--install-links]
+2026-11-10T02:09:04.4707572Z npm error
+2026-11-10T02:09:04.4707873Z npm error aliases: clean-install, ic, install-clean, isntall-clean
+2026-11-10T02:09:04.4708179Z npm error
+2026-11-10T02:09:04.4708395Z npm error Run "npm help ci" for more info
+2026-11-10T02:09:04.4708902Z npm error A complete log of this run can be found in: /home/runner/.npm/_logs/2026-11-10T02_09_02_434Z-debug-0.log
+2026-11-10T02:09:04.4763257Z ##[error]Process completed with exit code 1.
