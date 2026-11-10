@@ -221,21 +221,21 @@ export function exportPolymathCertificateAndAuditPdf(
   doc.setTextColor(14, 116, 144);
   doc.text('[ VERIFIED COGNITIVE AUDIT ]', pageWidth / 2, y + 2, { align: 'center' });
 
-  // Right Signatory
+  // Right Signatory & Author
   doc.setFont('times', 'italic');
   doc.setFontSize(9);
   doc.setTextColor(71, 85, 105);
-  doc.text('Board of Psychometric & Interdisciplinary Standards', pageWidth - margin - 14, y, { align: 'right' });
+  doc.text('Test written by Nathaniel Mina', pageWidth - margin - 14, y, { align: 'right' });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
-  doc.setTextColor(148, 163, 184);
-  doc.text('Polymath Aptitude Testing Protocol', pageWidth - margin - 14, y + 5, { align: 'right' });
+  doc.setTextColor(14, 116, 144);
+  doc.text('https://nate-mina.github.io/Portfolio-CV/', pageWidth - margin - 14, y + 5, { align: 'right' });
 
   // Bottom Notice
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(148, 163, 184);
-  doc.text('Page 1 of official transcript · See following pages for full question-by-question scientific audit', pageWidth / 2, pageHeight - margin - 2, { align: 'center' });
+  doc.text('Polymath Multidisciplinary Aptitude Assessment · Test written by Nathaniel Mina (https://nate-mina.github.io/Portfolio-CV/)', pageWidth / 2, pageHeight - margin - 2, { align: 'center' });
 
   // =========================================================================
   // PAGE 2+: COMPREHENSIVE QUESTION AUDIT & DIAGNOSTIC TRANSCRIPT

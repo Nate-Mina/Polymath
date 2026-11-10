@@ -1,13 +1,16 @@
 # Polymath Multidisciplinary Aptitude Assessment
 
+> **Test written by [Nathaniel Mina](https://nate-mina.github.io/Portfolio-CV/)**
+
 [![React](https://img.shields.io/badge/React-19.0-61dafb?logo=react&logoColor=white)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-8.x-646cff?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.x-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub%20Pages-22c55e?logo=github&logoColor=white)](#deploying-to-github-pages)
+[![Author: Nathaniel Mina](https://img.shields.io/badge/Author-Nathaniel%20Mina-06b6d4?logo=googlechrome&logoColor=white)](https://nate-mina.github.io/Portfolio-CV/)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-A rigorous psychometric and technical diagnostic testing engine designed to measure intellectual breadth, analytical depth, and polymathic cross-domain transfer across **20 academic degree fields** (15 technical + 5 non-technical disciplines).
+A rigorous psychometric and technical diagnostic testing engine designed to measure intellectual breadth, analytical depth, and polymathic cross-domain transfer across **20 academic degree fields** (15 technical + 5 non-technical disciplines). Test designed and written by [Nathaniel Mina](https://nate-mina.github.io/Portfolio-CV/).
 
 ---
 
@@ -265,6 +268,15 @@ This project is pre-configured with relative asset paths (`base: './'` in `vite.
 - **Icons**: [Lucide React](https://lucide.dev/)
 - **Charts**: Custom Zero-Dependency Mathematical Vector SVG Radar Engine
 - **State & Storage**: React Hooks with automatic `localStorage` synchronization
+
+---
+
+## Author & Credits
+
+- **Test Author & Curriculum Designer**: [Nathaniel Mina](https://nate-mina.github.io/Portfolio-CV/)
+- **Portfolio & CV**: [https://nate-mina.github.io/Portfolio-CV/](https://nate-mina.github.io/Portfolio-CV/)
+- **GitHub**: [@Nate-Mina](https://github.com/Nate-Mina)
+- **Repository**: [https://github.com/Nate-Mina/Polymath](https://github.com/Nate-Mina/Polymath)
 
 ---
 

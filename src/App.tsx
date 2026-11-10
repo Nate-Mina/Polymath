@@ -340,10 +340,29 @@ export default function App() {
 
       {/* Footer */}
       <footer className="w-full border-t border-slate-900 bg-slate-950 py-6 px-6 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-500 font-mono">
-        <div>
-          Polymath Multidisciplinary Aptitude Assessment · 15 Technical + 5 Humanities Disciplines · 80 Tiered Problems
+        <div className="flex flex-wrap items-center gap-2">
+          <span>Polymath Multidisciplinary Aptitude Assessment</span>
+          <span>·</span>
+          <span>Test written by</span>
+          <a
+            href="https://nate-mina.github.io/Portfolio-CV/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-4 decoration-cyan-500/50 hover:decoration-cyan-300 transition-colors"
+          >
+            Nathaniel Mina
+          </a>
         </div>
         <div className="flex items-center gap-4">
+          <a
+            href="https://nate-mina.github.io/Portfolio-CV/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-cyan-400 transition-colors"
+          >
+            Portfolio &amp; CV
+          </a>
+          <span>·</span>
           <button
             onClick={() => setIsAboutModalOpen(true)}
             className="hover:text-slate-300 underline underline-offset-4 cursor-pointer"

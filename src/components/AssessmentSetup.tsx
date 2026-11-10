@@ -16,6 +16,7 @@ import {
   Sliders,
   RotateCcw,
   User,
+  ExternalLink,
 } from 'lucide-react';
 
 interface AssessmentSetupProps {
@@ -112,6 +113,19 @@ export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
         <h1 className="text-2xl md:text-4xl font-bold text-slate-100 tracking-tight leading-tight">
           Polymath Multidisciplinary Aptitude Assessment
         </h1>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+          <span className="text-slate-400">Test written by</span>
+          <a
+            href="https://nate-mina.github.io/Portfolio-CV/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 font-semibold underline underline-offset-4 decoration-cyan-500/50 hover:decoration-cyan-300 transition-colors inline-flex items-center gap-1"
+          >
+            <span>Nathaniel Mina</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        </div>
 
         <p className="text-sm md:text-base text-slate-300 leading-relaxed max-w-3xl">
           A calibrated psychometric and technical assessment evaluating analytical reasoning across{' '}

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ExternalLink, Compass, BookOpen, Layers, Award, CheckCircle2, Cpu } from 'lucide-react';
+import { X, ExternalLink, Compass, BookOpen, Layers, Award, CheckCircle2, Cpu, User } from 'lucide-react';
 import { DISCIPLINES } from '../data/disciplines';
 
 interface AboutTestModalProps {
@@ -39,6 +39,36 @@ export const AboutTestModal: React.FC<AboutTestModalProps> = ({ isOpen, onClose 
 
         {/* Content Body */}
         <div className="p-6 overflow-y-auto space-y-6 text-slate-300 text-xs md:text-sm leading-relaxed">
+          {/* Author Attribution Card */}
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">
+                <User className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-[11px] font-mono uppercase tracking-wider text-cyan-400">
+                  Test Author &amp; Architect
+                </div>
+                <div className="font-bold text-slate-100 text-sm">
+                  Nathaniel Mina
+                </div>
+                <div className="text-xs text-slate-400 font-mono">
+                  https://nate-mina.github.io/Portfolio-CV/
+                </div>
+              </div>
+            </div>
+
+            <a
+              href="https://nate-mina.github.io/Portfolio-CV/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-slate-950 bg-gradient-to-r from-cyan-400 to-amber-400 hover:from-cyan-300 hover:to-amber-300 transition-colors shadow-md shadow-cyan-950"
+            >
+              <span>View Portfolio &amp; CV</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+
           {/* GitHub Repository Banner */}
           <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
