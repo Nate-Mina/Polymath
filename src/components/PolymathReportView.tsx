@@ -4,6 +4,7 @@ import { PolymathRadarChart } from './PolymathRadarChart';
 import { DomainMasteryGrid } from './DomainMasteryGrid';
 import { PerformanceHeatmap } from './PerformanceHeatmap';
 import { ShareResultsModal } from './ShareResultsModal';
+import { CertificateModal } from './CertificateModal';
 import { generateShareableResultsSnippet, copyToClipboard } from '../utils/shareResults';
 import { exportPolymathCertificateAndAuditPdf } from '../utils/pdfCertificateExport';
 import {
@@ -24,7 +25,9 @@ import {
   Check,
   FileDown,
   User,
+  Trophy,
 } from 'lucide-react';
+import { compareWithPreviousAttempt } from '../utils/localLeaderboard';
 
 interface PolymathReportViewProps {
   evaluation: PolymathEvaluation;
@@ -34,6 +37,7 @@ interface PolymathReportViewProps {
   onRetestWeakFields: () => void;
   candidateName?: string;
   totalSessionSeconds?: number;
+  onOpenLeaderboard?: () => void;
 }
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
@@ -46,12 +50,14 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
   onRetestWeakFields,
   candidateName,
   totalSessionSeconds = 0,
+  onOpenLeaderboard,
 }) => {
   const [activeTab, setActiveTab] = useState<'visualizations' | 'audit'>('visualizations');
   const [auditFilter, setAuditFilter] = useState<'all' | 'incorrect' | 'correct' | 'flagged'>('all');
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isCertificateModalOpen, setIsCertificateModalOpen] = useState(true);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const effectiveCandidateName = candidateName?.trim() || evaluation.candidateName || 'Guest Scholar';
@@ -157,6 +163,77 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
           </div>
         </div>
 
+        {/* Roast Callout for Scores Under 50% */}
+        {(evaluation.accuracyPercentage < 50 || evaluation.polymathQuotient < 50) && (
+          <div className="p-4 bg-red-950/60 border border-red-800/80 rounded-2xl flex items-center gap-4 text-white shadow-lg">
+            <div className="p-2.5 bg-red-900/60 border border-red-700/80 rounded-xl text-3xl shrink-0">
+              🍔🔥
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-[11px] font-mono font-bold tracking-wider text-red-400 uppercase">
+                Diagnostic Verdict (Score Under 50%)
+              </div>
+              <div className="text-sm md:text-base font-bold font-mono text-amber-200">
+                &ldquo;Your A Jack Of No Trades, jackass go flip some burgers and maybe in years you will learn how not to burn them&rdquo;
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Local Attempt Comparison Widget */}
+        {(() => {
+          const comp = compareWithPreviousAttempt(evaluation.accuracyPercentage, effectiveCandidateName);
+          if (comp.attemptCount > 0) {
+            return (
+              <div className="p-4 bg-slate-950/80 border border-slate-800 rounded-2xl flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400">
+                    <Trophy className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase text-slate-400 font-bold">
+                      Session Progression &amp; Historical Comparison
+                    </div>
+                    <div className="text-sm font-bold text-slate-100 flex items-center gap-2 mt-0.5">
+                      <span>Attempt #{comp.attemptCount} for {effectiveCandidateName}</span>
+                      {comp.hasPrevious && (
+                        <span
+                          className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                            comp.diffScore > 0
+                              ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                              : comp.diffScore < 0
+                              ? 'bg-rose-950 text-rose-400 border border-rose-800'
+                              : 'bg-slate-800 text-slate-300'
+                          }`}
+                        >
+                          {comp.diffScore > 0 ? `+${comp.diffScore}% Improvement` : `${comp.diffScore}% Delta`}
+                        </span>
+                      )}
+                    </div>
+                    {comp.previousAttempt && (
+                      <div className="text-slate-400 text-[11px] mt-0.5">
+                        Previous attempt scored {comp.previousAttempt.score.toFixed(1)}% on {comp.previousAttempt.formattedDate}.
+                        Current local rank: #{comp.rankAmongAll} of {comp.totalAttempts} total attempts.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {onOpenLeaderboard && (
+                  <button
+                    onClick={onOpenLeaderboard}
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-950/60 hover:bg-amber-900/70 border border-amber-800 text-amber-300 font-semibold transition-colors cursor-pointer"
+                  >
+                    <Trophy className="w-3.5 h-3.5" />
+                    <span>View Leaderboard</span>
+                  </button>
+                )}
+              </div>
+            );
+          }
+          return null;
+        })()}
+
         {/* KPI Strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-6 border-t border-slate-800/80 font-mono">
           <div className="p-3.5 bg-slate-950 rounded-xl border border-slate-800">
@@ -232,6 +309,28 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
         {/* Action Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
           <div className="flex flex-wrap items-center gap-2">
+            {/* View Certificate Popup */}
+            <button
+              onClick={() => setIsCertificateModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-slate-950 bg-gradient-to-r from-amber-400 to-yellow-300 hover:from-amber-300 hover:to-yellow-200 transition-colors shadow-md shadow-amber-950/40 cursor-pointer"
+              title="Open the official diploma certificate popup with celebration"
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>View Certificate {evaluation.polymathQuotient > 70 ? '🎉' : ''}</span>
+            </button>
+
+            {/* Leaderboard Button */}
+            {onOpenLeaderboard && (
+              <button
+                onClick={onOpenLeaderboard}
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-amber-300 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-800 transition-colors shadow-md shadow-amber-950/40 cursor-pointer"
+                title="View Local High Scores & Community Firebase Test Averages"
+              >
+                <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                <span>Leaderboard</span>
+              </button>
+            )}
+
             {/* Export PDF Button */}
             <button
               onClick={handleExportPdf}
@@ -555,6 +654,16 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         evaluation={evaluation}
+      />
+
+      {/* Official Certificate Celebration Popup */}
+      <CertificateModal
+        isOpen={isCertificateModalOpen}
+        onClose={() => setIsCertificateModalOpen(false)}
+        evaluation={evaluation}
+        candidateName={effectiveCandidateName}
+        onDownloadPdf={handleExportPdf}
+        isDownloadingPdf={isExportingPdf}
       />
     </div>
   );

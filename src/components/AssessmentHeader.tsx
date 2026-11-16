@@ -1,6 +1,6 @@
 import React from 'react';
 import { AssessmentScope, FeedbackTiming } from '../types/polymath';
-import { Compass, Sparkles, BookOpen, Clock, RotateCcw } from 'lucide-react';
+import { Compass, Sparkles, BookOpen, Clock, RotateCcw, Trophy } from 'lucide-react';
 
 interface AssessmentHeaderProps {
   scope: AssessmentScope;
@@ -8,6 +8,7 @@ interface AssessmentHeaderProps {
   onToggleFeedbackTiming: () => void;
   onResetAssessment: () => void;
   onOpenAbout: () => void;
+  onOpenLeaderboard: () => void;
   currentIndex?: number;
   totalQuestions?: number;
   isTestActive: boolean;
@@ -19,6 +20,7 @@ export const AssessmentHeader: React.FC<AssessmentHeaderProps> = ({
   onToggleFeedbackTiming,
   onResetAssessment,
   onOpenAbout,
+  onOpenLeaderboard,
   currentIndex = 0,
   totalQuestions = 80,
   isTestActive,
@@ -81,6 +83,16 @@ export const AssessmentHeader: React.FC<AssessmentHeaderProps> = ({
 
       {/* Zone 3: Primary action & Mode Controls */}
       <div className="flex items-center gap-2.5 shrink-0">
+        {/* Leaderboard Button */}
+        <button
+          onClick={onOpenLeaderboard}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-amber-300 hover:text-amber-200 bg-amber-950/40 hover:bg-amber-900/50 border border-amber-800/80 transition-colors cursor-pointer"
+          title="View Local High Scores & Community Firebase Test Averages"
+        >
+          <Trophy className="w-3.5 h-3.5 text-amber-400" />
+          <span>Leaderboard</span>
+        </button>
+
         {/* About Test Button */}
         <button
           onClick={onOpenAbout}

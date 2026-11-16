@@ -1,0 +1,150 @@
+{
+  "entities": {
+    "TestScore": {
+      "title": "TestScore",
+      "description": "A candidate's completed examination score record",
+      "type": "object",
+      "properties": {
+        "candidateName": {
+          "type": "string",
+          "description": "Candidate's declared examination identity",
+          "minLength": 2,
+          "maxLength": 100
+        },
+        "score": {
+          "type": "number",
+          "description": "Percentage score earned (0 to 100)"
+        },
+        "correctCount": {
+          "type": "number",
+          "description": "Total count of correct answers"
+        },
+        "totalQuestions": {
+          "type": "number",
+          "description": "Total questions presented in this session"
+        },
+        "track": {
+          "type": "string",
+          "description": "Assessment track identifier (full, partial, etc.)",
+          "maxLength": 30
+        },
+        "archetype": {
+          "type": "string",
+          "description": "Polymath archetype classification title",
+          "maxLength": 100
+        },
+        "rqScore": {
+          "type": "number",
+          "description": "Renaissance Quotient score"
+        },
+        "confidenceScore": {
+          "type": "number",
+          "description": "Polymath confidence rating percentage"
+        },
+        "timeTakenSec": {
+          "type": "number",
+          "description": "Deliberation duration in seconds"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO timestamp of completion"
+        }
+      },
+      "required": ["candidateName", "score", "correctCount", "totalQuestions", "track", "createdAt"]
+    },
+    "GlobalStats": {
+      "title": "GlobalStats",
+      "description": "Global community statistics and running test score averages",
+      "type": "object",
+      "properties": {
+        "totalSubmissions": {
+          "type": "number",
+          "description": "Total tests completed across all candidates"
+        },
+        "averageScore": {
+          "type": "number",
+          "description": "Mean score across all tests completed"
+        },
+        "totalScoreSum": {
+          "type": "number",
+          "description": "Cumulative score sum for running mean calculation"
+        },
+        "fullTrackSubmissions": {
+          "type": "number",
+          "description": "Total submissions on the 80-question Full Comprehensive track"
+        },
+        "fullTrackAvgScore": {
+          "type": "number",
+          "description": "Average score on the Full Comprehensive track"
+        },
+        "partialTrackSubmissions": {
+          "type": "number",
+          "description": "Total submissions on the 22-question Partial Choice track"
+        },
+        "partialTrackAvgScore": {
+          "type": "number",
+          "description": "Average score on the Partial Choice track"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last aggregate update"
+        }
+      },
+      "required": ["totalSubmissions", "averageScore", "totalScoreSum"]
+    },
+    "QuestionStats": {
+      "title": "QuestionStats",
+      "description": "Empirical accuracy and deliberation statistics for an individual question",
+      "type": "object",
+      "properties": {
+        "questionId": {
+          "type": "string",
+          "description": "Unique identifier of the question",
+          "maxLength": 64
+        },
+        "attemptCount": {
+          "type": "number",
+          "description": "Number of times this question was answered"
+        },
+        "correctCount": {
+          "type": "number",
+          "description": "Number of times answered correctly"
+        },
+        "successRate": {
+          "type": "number",
+          "description": "Empirical percentage of candidates answering correctly (0 to 100)"
+        },
+        "totalTimeSpentSec": {
+          "type": "number",
+          "description": "Cumulative seconds spent by candidates on this question"
+        },
+        "avgTimeSpentSec": {
+          "type": "number",
+          "description": "Average seconds spent deliberating on this question"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp of last update"
+        }
+      },
+      "required": ["questionId", "attemptCount", "correctCount", "successRate"]
+    }
+  },
+  "firestore": {
+    "/test_scores/{scoreId}": {
+      "schema": { "$ref": "#/entities/TestScore" },
+      "description": "Collection of submitted candidate test scores and assessment outcomes"
+    },
+    "/test_stats/global": {
+      "schema": { "$ref": "#/entities/GlobalStats" },
+      "description": "Singleton aggregate document storing global community test averages"
+    },
+    "/question_stats/{questionId}": {
+      "schema": { "$ref": "#/entities/QuestionStats" },
+      "description": "Aggregated statistical performance and empirical difficulty per question"
+    }
+  }
+}

@@ -17,7 +17,10 @@ import {
   RotateCcw,
   User,
   ExternalLink,
+  AlertCircle,
+  Trophy,
 } from 'lucide-react';
+import { getPersonalBest, getLocalLeaderboard } from '../utils/localLeaderboard';
 
 interface AssessmentSetupProps {
   candidateName: string;
@@ -31,6 +34,7 @@ interface AssessmentSetupProps {
   hasSavedSession: boolean;
   onResumeSession: () => void;
   savedAnswerCount: number;
+  onOpenLeaderboard?: () => void;
 }
 
 export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
@@ -40,6 +44,7 @@ export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
   hasSavedSession,
   onResumeSession,
   savedAnswerCount,
+  onOpenLeaderboard,
 }) => {
   const [selectedScope, setSelectedScope] = useState<AssessmentScope>('partial');
   const [selectedTiming, setSelectedTiming] = useState<FeedbackTiming>('instant');
@@ -178,16 +183,31 @@ export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
         )}
       </div>
 
-      {/* Candidate Identity Card */}
-      <div className="p-5 bg-slate-900 border border-slate-800 rounded-2xl shadow-md space-y-3">
+      {/* Candidate Identity Card (Required for Leaderboard & Certificate) */}
+      <div className={`p-5 bg-slate-900 border rounded-2xl shadow-md space-y-3 transition-colors ${
+        candidateName.trim().length >= 2 ? 'border-cyan-800' : 'border-amber-700/80 ring-1 ring-amber-600/30'
+      }`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <label htmlFor="candidate-name-input" className="flex items-center gap-2 text-sm font-semibold text-slate-100">
             <User className="w-4 h-4 text-cyan-400" />
-            <span>Candidate Identity for Official Diploma &amp; Audit Transcript</span>
+            <span>Candidate Identity</span>
+            <span className="px-1.5 py-0.2 rounded text-[10px] font-mono uppercase bg-rose-950/80 text-rose-300 border border-rose-800 font-bold">
+              Required
+            </span>
           </label>
-          <span className="text-xs text-slate-400 font-mono">
-            {candidateName.trim() ? 'Custom Scholar Inscription' : 'Default: Guest Scholar'}
-          </span>
+          <div className="flex items-center gap-2 text-xs font-mono">
+            {candidateName.trim().length >= 2 ? (
+              <span className="text-emerald-400 flex items-center gap-1 font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Verified Name</span>
+              </span>
+            ) : (
+              <span className="text-amber-400 font-semibold flex items-center gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                <span>Enter at least 2 characters</span>
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="relative">
@@ -196,14 +216,59 @@ export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
             type="text"
             value={candidateName}
             onChange={(e) => onCandidateNameChange(e.target.value)}
-            placeholder="e.g. Leonardo da Vinci (or leave blank for Guest Scholar)"
+            placeholder="e.g. Leonardo da Vinci (Required to start test & record scores)"
             maxLength={60}
-            className="w-full px-4 py-3 bg-slate-950 border border-slate-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 rounded-xl text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors"
+            className={`w-full px-4 py-3 bg-slate-950 border rounded-xl text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors ${
+              candidateName.trim().length >= 2
+                ? 'border-slate-800 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500'
+                : 'border-amber-600/80 focus:border-amber-400 focus:ring-1 focus:ring-amber-500'
+            }`}
           />
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">
-          Your name will be inscribed upon your verified PDF Certificate of Polymathy and comprehensive question audit upon completion.
-        </p>
+
+        {candidateName.trim().length < 2 ? (
+          <p className="text-xs text-amber-300 flex items-center gap-1.5 leading-relaxed">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-400" />
+            <span>Candidate name is required to track previous attempts on the local leaderboard, store scores in Firebase, and generate your certificate.</span>
+          </p>
+        ) : (
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Your name will be inscribed upon your verified PDF Certificate of Polymathy and tracked on your local and community leaderboards.
+          </p>
+        )}
+
+        {/* Local Leaderboard Quick Snapshot if attempts exist */}
+        {(() => {
+          const personalBest = getPersonalBest(candidateName);
+          const allAttempts = getLocalLeaderboard();
+          if (allAttempts.length > 0) {
+            return (
+              <div className="mt-3 pt-3 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-2 text-slate-300">
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                  <span>
+                    Local History: <strong>{allAttempts.length}</strong> previous sessions recorded.
+                    {personalBest && (
+                      <span className="ml-1 text-cyan-300">
+                        (Personal Best: <strong>{personalBest.score.toFixed(1)}%</strong> by {personalBest.candidateName})
+                      </span>
+                    )}
+                  </span>
+                </div>
+                {onOpenLeaderboard && (
+                  <button
+                    onClick={onOpenLeaderboard}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-slate-950 border border-cyan-800 text-cyan-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <Trophy className="w-3.5 h-3.5 text-amber-400" />
+                    <span>View Full Leaderboard</span>
+                  </button>
+                )}
+              </div>
+            );
+          }
+          return null;
+        })()}
       </div>
 
       {/* Configuration Grid */}
@@ -429,6 +494,13 @@ export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
             </div>
           </div>
 
+          {candidateName.trim().length < 2 && (
+            <div className="p-3 bg-amber-950/40 border border-amber-800/80 rounded-xl text-xs text-amber-300 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Please enter your candidate name above before launching.</span>
+            </div>
+          )}
+
           <button
             onClick={() =>
               onStart(
@@ -440,11 +512,15 @@ export const AssessmentSetup: React.FC<AssessmentSetupProps> = ({
                   : undefined
               )
             }
-            disabled={selectedScope === 'partial' && !isPartialValid}
-            className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-bold text-sm text-slate-950 bg-gradient-to-r from-cyan-400 to-amber-400 hover:from-cyan-300 hover:to-amber-300 transition-all shadow-lg shadow-cyan-950 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={(selectedScope === 'partial' && !isPartialValid) || candidateName.trim().length < 2}
+            className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl font-bold text-sm text-slate-950 bg-gradient-to-r from-cyan-400 to-amber-400 hover:from-cyan-300 hover:to-amber-300 transition-all shadow-lg shadow-cyan-950 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <Play className="w-4 h-4 fill-slate-950" />
-            <span>Launch Assessment ({getQuestionCount()} Questions)</span>
+            <span>
+              {candidateName.trim().length < 2
+                ? 'Candidate Name Required to Launch'
+                : `Launch Assessment (${getQuestionCount()} Questions)`}
+            </span>
           </button>
         </div>
       </div>

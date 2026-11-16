@@ -13,6 +13,9 @@ import { QuestionCard } from './components/QuestionCard';
 import { QuestionNavDrawer } from './components/QuestionNavDrawer';
 import { PolymathReportView } from './components/PolymathReportView';
 import { AboutTestModal } from './components/AboutTestModal';
+import { LeaderboardModal } from './components/LeaderboardModal';
+import { saveLocalLeaderboardEntry } from './utils/localLeaderboard';
+import { saveScoreToFirebase } from './utils/firebase';
 
 const LOCAL_STORAGE_KEY = 'polymath_assessment_session_v1';
 
@@ -28,6 +31,9 @@ export default function App() {
   const [userAnswers, setUserAnswers] = useState<Record<string, UserAnswerRecord>>({});
   const [isNavDrawerOpen, setIsNavDrawerOpen] = useState<boolean>(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState<boolean>(false);
+  const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
+  const [highlightSessionId, setHighlightSessionId] = useState<string | undefined>(undefined);
+  const [hasPersistedReport, setHasPersistedReport] = useState<boolean>(false);
   const [sessionSeconds, setSessionSeconds] = useState<number>(0);
 
   // Real-time session elapsed timer & active question pacing
@@ -107,8 +113,58 @@ export default function App() {
     setActiveQuestions(questions);
     setCurrentIndex(0);
     setSessionSeconds(0);
+    setHasPersistedReport(false);
     setAppStage('testing');
   };
+
+  // Auto-record session on completion to Local Leaderboard (localStorage) and Firebase Cloud
+  useEffect(() => {
+    if (appStage === 'report' && !hasPersistedReport) {
+      const answeredList = Object.values(userAnswers).filter(
+        (a) => a.selectedOption !== null && a.selectedOption !== undefined
+      );
+
+      if (answeredList.length > 0) {
+        setHasPersistedReport(true);
+        const evalResult = calculatePolymathEvaluation(activeQuestions, userAnswers, candidateName);
+        const effectiveName = candidateName.trim() || 'Guest Scholar';
+
+        // 1. Save to Local Leaderboard (localStorage)
+        try {
+          const { saved } = saveLocalLeaderboardEntry({
+            candidateName: effectiveName,
+            score: evalResult.accuracyPercentage,
+            correctCount: evalResult.correctCount,
+            totalQuestions: evalResult.totalQuestions,
+            track: scope,
+            archetype: evalResult.archetype.title,
+            rqScore: evalResult.polymathQuotient,
+            confidenceScore: evalResult.confidenceScore,
+            timeTakenSec: sessionSeconds,
+          });
+          setHighlightSessionId(saved.id);
+        } catch (err) {
+          console.warn('Could not save to local leaderboard:', err);
+        }
+
+        // 2. Upload to Firebase (cloud telemetry & global/question running averages)
+        saveScoreToFirebase({
+          candidateName: effectiveName,
+          score: evalResult.accuracyPercentage,
+          correctCount: evalResult.correctCount,
+          totalQuestions: evalResult.totalQuestions,
+          track: scope,
+          archetype: evalResult.archetype.title,
+          rqScore: evalResult.polymathQuotient,
+          confidenceScore: evalResult.confidenceScore,
+          timeTakenSec: sessionSeconds,
+          answers: answeredList,
+        }).catch((err) => {
+          console.warn('Firebase score upload status:', err);
+        });
+      }
+    }
+  }, [appStage, hasPersistedReport, activeQuestions, userAnswers, candidateName, scope, sessionSeconds]);
 
   const handleResumeSession = () => {
     setActiveQuestions(ALL_QUESTIONS);
@@ -176,6 +232,7 @@ export default function App() {
     } catch (e) {
       // ignore
     }
+    setHasPersistedReport(false);
     setAppStage('setup');
     setCurrentIndex(0);
     setSessionSeconds(0);
@@ -188,6 +245,7 @@ export default function App() {
     } catch (e) {
       // ignore
     }
+    setHasPersistedReport(false);
     setCurrentIndex(0);
     setSessionSeconds(0);
     setAppStage('testing');
@@ -205,11 +263,13 @@ export default function App() {
       setActiveQuestions(filteredQs);
       setCurrentIndex(0);
       setSessionSeconds(0);
+      setHasPersistedReport(false);
       setAppStage('testing');
     } else {
       setActiveQuestions(ALL_QUESTIONS);
       setCurrentIndex(0);
       setSessionSeconds(0);
+      setHasPersistedReport(false);
       setAppStage('testing');
     }
   };
@@ -258,6 +318,7 @@ export default function App() {
         }
         onResetAssessment={handleResetAssessment}
         onOpenAbout={() => setIsAboutModalOpen(true)}
+        onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
         currentIndex={currentIndex}
         totalQuestions={activeQuestions.length}
         isTestActive={appStage === 'testing'}
@@ -276,6 +337,7 @@ export default function App() {
             hasSavedSession={savedAnswerCount > 0}
             onResumeSession={handleResumeSession}
             savedAnswerCount={savedAnswerCount}
+            onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
           />
         )}
 
@@ -318,6 +380,7 @@ export default function App() {
             totalSessionSeconds={sessionSeconds}
             onRetake={handleRetake}
             onRetestWeakFields={handleRetestWeakFields}
+            onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
           />
         )}
       </main>
@@ -336,6 +399,14 @@ export default function App() {
       <AboutTestModal
         isOpen={isAboutModalOpen}
         onClose={() => setIsAboutModalOpen(false)}
+      />
+
+      {/* Modal: Leaderboard & Empirical Question Averages */}
+      <LeaderboardModal
+        isOpen={isLeaderboardOpen}
+        onClose={() => setIsLeaderboardOpen(false)}
+        currentCandidateName={candidateName}
+        highlightSessionId={highlightSessionId}
       />
 
       {/* Footer */}

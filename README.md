@@ -37,7 +37,12 @@ A rigorous psychometric and technical diagnostic testing engine designed to meas
   - **Comprehensive Answer Audit**: Filterable review of all problems with full scientific rationales and core principles.
   - **D3 Performance Pacing & Deliberation Heatmap**: Mathematical D3 scale interpolation mapping time invested per academic discipline relative to session mean, detecting cognitive deliberation bottlenecks and pacing outliers (> 135% of average).
   - **Official Diploma Certificate & Exam Audit PDF Exporter**: One-click generation of a multi-page, publication-grade PDF featuring an executive diploma with polymath confidence score, verified credential ID, and complete question-by-question audit with candidate selections, verified answers, correctness indicators, and scientific rationales.
-  - **Candidate Identity Onboarding**: Candidate name intake field on test setup inscribed onto the official diploma and diagnostic exam transcripts.
+  - **Certificate Celebration Popup Window & Fireworks**: Automatic modal display upon test completion presenting the official certificate diploma. For candidates scoring above 70, real-time particle fireworks explode across the screen with celebratory **"YAY YOUR POLY!"** fanfare and replay controls.
+  - **Candidate Identity Requirement**: Entering a verified candidate name is strictly required prior to launching the assessment. Candidate credentials are inscribed onto the official PDF diploma and persisted to both local session tracking and cloud analytics.
+  - **Local-Only Leaderboard & Personal Progression**: Stored in `localStorage` to track high scores, attempt numbers, and chronological session history. Candidates can review past attempts, monitor delta improvement (`+X.X%` vs prior attempts), evaluate personal best scores, and filter by assessment track.
+  - **Firebase Firestore Cloud Analytics**: Connected to a live Firestore database to store test scores, candidate names, and deliberation telemetry. Automatically computes and updates:
+    - **Global Test Average Scores**: Real-time aggregate means across all candidates (overall, 80-question Full Exam, and 22-question Partial Choice track).
+    - **Per-Question Empirical Averages**: Calculates success rates (% correct) and average deliberation time for each individual problem, dynamically ranking question difficulty based on real community data.
   - **One-Click Share Results**: Generates formatted ASCII summaries and social cards of radar scores directly to the clipboard.
   - **Local Persistence & Hotkeys**: Seamless session saving in `localStorage` and keyboard shortcuts (`A`–`D`, `1`–`4`, `←`/`→`, `M` for question map).
 

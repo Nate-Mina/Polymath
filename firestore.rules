@@ -1,0 +1,78 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidTestScore(data) {
+      return data.keys().hasAll(['candidateName', 'score', 'correctCount', 'totalQuestions', 'track', 'createdAt'])
+        && data.keys().hasOnly(['candidateName', 'score', 'correctCount', 'totalQuestions', 'track', 'archetype', 'rqScore', 'confidenceScore', 'timeTakenSec', 'createdAt'])
+        && data.candidateName is string && data.candidateName.size() >= 2 && data.candidateName.size() <= 100
+        && data.score is number && data.score >= 0 && data.score <= 100
+        && data.correctCount is number && data.correctCount >= 0 && data.correctCount <= 100
+        && data.totalQuestions is number && data.totalQuestions >= 1 && data.totalQuestions <= 100
+        && data.track is string && data.track.size() <= 30
+        && (!('archetype' in data) || (data.archetype is string && data.archetype.size() <= 100))
+        && (!('rqScore' in data) || (data.rqScore is number && data.rqScore >= 0 && data.rqScore <= 300))
+        && (!('confidenceScore' in data) || (data.confidenceScore is number && data.confidenceScore >= 0 && data.confidenceScore <= 100))
+        && (!('timeTakenSec' in data) || (data.timeTakenSec is number && data.timeTakenSec >= 0))
+        && data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidGlobalStats(data) {
+      return data.keys().hasAll(['totalSubmissions', 'averageScore', 'totalScoreSum'])
+        && data.keys().hasOnly(['totalSubmissions', 'averageScore', 'totalScoreSum', 'fullTrackSubmissions', 'fullTrackAvgScore', 'partialTrackSubmissions', 'partialTrackAvgScore', 'updatedAt'])
+        && data.totalSubmissions is number && data.totalSubmissions >= 0
+        && data.averageScore is number && data.averageScore >= 0 && data.averageScore <= 100
+        && data.totalScoreSum is number && data.totalScoreSum >= 0;
+    }
+
+    function isValidQuestionStats(data) {
+      return data.keys().hasAll(['questionId', 'attemptCount', 'correctCount', 'successRate'])
+        && data.keys().hasOnly(['questionId', 'attemptCount', 'correctCount', 'successRate', 'totalTimeSpentSec', 'avgTimeSpentSec', 'updatedAt'])
+        && data.questionId is string && data.questionId.size() <= 64
+        && data.attemptCount is number && data.attemptCount >= 0
+        && data.correctCount is number && data.correctCount >= 0
+        && data.successRate is number && data.successRate >= 0 && data.successRate <= 100;
+    }
+
+    // Collection: test_scores
+    match /test_scores/{scoreId} {
+      allow read: if true;
+      allow create: if isValidId(scoreId) && isValidTestScore(incoming());
+      // Scores are immutable once submitted
+      allow update, delete: if false;
+    }
+
+    // Collection: test_stats
+    match /test_stats/{statsDoc} {
+      allow read: if true;
+      allow create, update: if isValidId(statsDoc) && isValidGlobalStats(incoming());
+      allow delete: if false;
+    }
+
+    // Collection: question_stats
+    match /question_stats/{questionId} {
+      allow read: if true;
+      allow create, update: if isValidId(questionId) && isValidQuestionStats(incoming());
+      allow delete: if false;
+    }
+
+    // Test connection probe doc for initialization verification
+    match /test/connection {
+      allow read: if true;
+    }
+  }
+}
