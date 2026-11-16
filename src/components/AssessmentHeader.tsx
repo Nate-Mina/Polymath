@@ -1,6 +1,7 @@
 import React from 'react';
 import { AssessmentScope, FeedbackTiming } from '../types/polymath';
-import { Compass, Sparkles, BookOpen, Clock, RotateCcw, Trophy } from 'lucide-react';
+import { AuthUser } from '../utils/firebase';
+import { Compass, BookOpen, RotateCcw, Trophy, LogIn, LogOut } from 'lucide-react';
 
 interface AssessmentHeaderProps {
   scope: AssessmentScope;
@@ -9,6 +10,9 @@ interface AssessmentHeaderProps {
   onResetAssessment: () => void;
   onOpenAbout: () => void;
   onOpenLeaderboard: () => void;
+  authUser: AuthUser | null;
+  onSignIn: () => void;
+  onSignOut: () => void;
   currentIndex?: number;
   totalQuestions?: number;
   isTestActive: boolean;
@@ -21,12 +25,13 @@ export const AssessmentHeader: React.FC<AssessmentHeaderProps> = ({
   onResetAssessment,
   onOpenAbout,
   onOpenLeaderboard,
-  currentIndex = 0,
-  totalQuestions = 80,
+  authUser,
+  onSignIn,
+  onSignOut,
   isTestActive,
 }) => {
   return (
-    <header className="w-full flex items-center justify-between gap-8 px-6 py-4 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-40">
+    <header className="w-full flex items-center justify-between gap-4 px-4 sm:px-6 py-3.5 border-b border-slate-800 bg-slate-950/90 backdrop-blur-md sticky top-0 z-40">
       {/* Zone 1: Single text element wordmark */}
       <a
         href="/"
@@ -36,21 +41,21 @@ export const AssessmentHeader: React.FC<AssessmentHeaderProps> = ({
             onResetAssessment();
           }
         }}
-        className="text-base md:text-lg font-bold tracking-tight text-slate-100 hover:text-cyan-400 transition-colors whitespace-nowrap shrink-0 flex items-center gap-2"
+        className="text-sm sm:text-base md:text-lg font-bold tracking-tight text-slate-100 hover:text-cyan-400 transition-colors whitespace-nowrap shrink-0 flex items-center gap-2"
       >
-        <Compass className="w-5 h-5 text-cyan-400 shrink-0" />
+        <Compass className="w-5 h-5 text-[#D4AF37] shrink-0" />
         <span className="truncate">Polymath Multidisciplinary Aptitude Assessment</span>
       </a>
 
       {/* Zone 2: Clean single-line text indicators */}
-      <div className="hidden lg:flex items-center gap-4 text-xs font-medium text-slate-400 whitespace-nowrap shrink-0">
+      <div className="hidden xl:flex items-center gap-3 text-xs font-medium text-slate-400 whitespace-nowrap shrink-0">
         {scope === 'partial' ? (
           <>
             <span className="text-cyan-300 font-semibold">Partial Polymath Track</span>
             <span aria-hidden="true" className="text-slate-600">·</span>
-            <span>8 Technical + 3 Humanities Fields</span>
+            <span>8 Tech + 3 Hum Fields</span>
             <span aria-hidden="true" className="text-slate-600">·</span>
-            <span className="text-slate-300 font-mono">22 Problems (1 Easy + 1 Med each)</span>
+            <span className="text-slate-300 font-mono">22 Problems</span>
           </>
         ) : scope === 'technical' ? (
           <>
@@ -72,36 +77,58 @@ export const AssessmentHeader: React.FC<AssessmentHeaderProps> = ({
           </>
         ) : (
           <>
-            <span>15 Technical Disciplines</span>
+            <span>20 Academic Disciplines</span>
             <span aria-hidden="true" className="text-slate-600">·</span>
-            <span>5 Non-Technical Disciplines</span>
-            <span aria-hidden="true" className="text-slate-600">·</span>
-            <span className="text-slate-300 font-mono">80 Calibrated Tiered Problems</span>
+            <span className="text-slate-300 font-mono">80 Calibrated Problems</span>
           </>
         )}
       </div>
 
       {/* Zone 3: Primary action & Mode Controls */}
-      <div className="flex items-center gap-2.5 shrink-0">
-        {/* Leaderboard Button */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Scores & Global Averages Button */}
         <button
           onClick={onOpenLeaderboard}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-amber-300 hover:text-amber-200 bg-amber-950/40 hover:bg-amber-900/50 border border-amber-800/80 transition-colors cursor-pointer"
-          title="View Local High Scores & Community Firebase Test Averages"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg text-[#FDE68A] hover:text-white bg-amber-950/40 hover:bg-amber-900/50 border border-[#D4AF37]/60 transition-colors cursor-pointer whitespace-nowrap"
+          title="View Scores, Global Community Averages & Saved History"
         >
-          <Trophy className="w-3.5 h-3.5 text-amber-400" />
-          <span>Leaderboard</span>
+          <Trophy className="w-3.5 h-3.5 text-[#D4AF37]" />
+          <span>Scores</span>
         </button>
 
         {/* About Test Button */}
         <button
           onClick={onOpenAbout}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer"
+          className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 transition-colors cursor-pointer whitespace-nowrap"
           title="View detailed test background, curricula, and scoring methodology"
         >
           <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
           <span>About Test</span>
         </button>
+
+        {/* Google Auth Sign-In / Profile */}
+        {authUser ? (
+          <button
+            onClick={onSignOut}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg text-emerald-300 bg-emerald-950/40 border border-emerald-800/70 hover:bg-emerald-950/80 transition-colors cursor-pointer whitespace-nowrap"
+            title={`Signed in as ${authUser.displayName || authUser.email}. Click to sign out.`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="hidden md:inline max-w-[100px] truncate">
+              {authUser.displayName?.split(' ')[0] || 'Scholar'}
+            </span>
+            <LogOut className="w-3 h-3 text-slate-400" />
+          </button>
+        ) : (
+          <button
+            onClick={onSignIn}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-950 bg-[#D4AF37] hover:bg-[#FDE68A] transition-colors cursor-pointer whitespace-nowrap"
+            title="Sign in with Google to save scores to cloud and view community averages"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Sign In</span>
+          </button>
+        )}
 
         {/* GitHub Link */}
         <a

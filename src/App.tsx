@@ -15,7 +15,13 @@ import { PolymathReportView } from './components/PolymathReportView';
 import { AboutTestModal } from './components/AboutTestModal';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import { saveLocalLeaderboardEntry } from './utils/localLeaderboard';
-import { saveScoreToFirebase } from './utils/firebase';
+import {
+  AuthUser,
+  subscribeToAuthState,
+  signInWithGoogle,
+  signOutUser,
+  saveAssessmentToCloud,
+} from './utils/firebase';
 
 const LOCAL_STORAGE_KEY = 'polymath_assessment_session_v1';
 
@@ -23,8 +29,9 @@ export default function App() {
   const [appStage, setAppStage] = useState<'setup' | 'testing' | 'report'>('setup');
   const [scope, setScope] = useState<AssessmentScope>('full');
   const [feedbackTiming, setFeedbackTiming] = useState<FeedbackTiming>('instant');
-  const [targetFieldId, setTargetFieldId] = useState<string | undefined>(undefined);
+  const [_targetFieldId, setTargetFieldId] = useState<string | undefined>(undefined);
 
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [candidateName, setCandidateName] = useState<string>('');
   const [activeQuestions, setActiveQuestions] = useState<Question[]>(ALL_QUESTIONS);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -34,7 +41,20 @@ export default function App() {
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState<boolean>(false);
   const [highlightSessionId, setHighlightSessionId] = useState<string | undefined>(undefined);
   const [hasPersistedReport, setHasPersistedReport] = useState<boolean>(false);
+  const [cloudSaveStatus, setCloudSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [cloudSaveError, setCloudSaveError] = useState<string | null>(null);
   const [sessionSeconds, setSessionSeconds] = useState<number>(0);
+
+  // Subscribe to Firebase Google Auth state and pre-fill scholar name if empty
+  useEffect(() => {
+    const unsub = subscribeToAuthState((user) => {
+      setAuthUser(user);
+      if (user?.displayName) {
+        setCandidateName((prev) => (prev.trim().length === 0 ? user.displayName!.slice(0, 40) : prev));
+      }
+    });
+    return () => unsub();
+  }, []);
 
   // Real-time session elapsed timer & active question pacing
   useEffect(() => {
@@ -114,10 +134,13 @@ export default function App() {
     setCurrentIndex(0);
     setSessionSeconds(0);
     setHasPersistedReport(false);
+    setCloudSaveStatus('idle');
+    setCloudSaveError(null);
     setAppStage('testing');
   };
 
-  // Auto-record session on completion to Local Leaderboard (localStorage) and Firebase Cloud
+  // Auto-record session on completion to Local Leaderboard (localStorage)
+  // Cloud saving to Firebase is deliberately triggered by explicit user click on "Save Score to Cloud"
   useEffect(() => {
     if (appStage === 'report' && !hasPersistedReport) {
       const answeredList = Object.values(userAnswers).filter(
@@ -129,7 +152,6 @@ export default function App() {
         const evalResult = calculatePolymathEvaluation(activeQuestions, userAnswers, candidateName);
         const effectiveName = candidateName.trim() || 'Guest Scholar';
 
-        // 1. Save to Local Leaderboard (localStorage)
         try {
           const { saved } = saveLocalLeaderboardEntry({
             candidateName: effectiveName,
@@ -146,25 +168,52 @@ export default function App() {
         } catch (err) {
           console.warn('Could not save to local leaderboard:', err);
         }
-
-        // 2. Upload to Firebase (cloud telemetry & global/question running averages)
-        saveScoreToFirebase({
-          candidateName: effectiveName,
-          score: evalResult.accuracyPercentage,
-          correctCount: evalResult.correctCount,
-          totalQuestions: evalResult.totalQuestions,
-          track: scope,
-          archetype: evalResult.archetype.title,
-          rqScore: evalResult.polymathQuotient,
-          confidenceScore: evalResult.confidenceScore,
-          timeTakenSec: sessionSeconds,
-          answers: answeredList,
-        }).catch((err) => {
-          console.warn('Firebase score upload status:', err);
-        });
       }
     }
   }, [appStage, hasPersistedReport, activeQuestions, userAnswers, candidateName, scope, sessionSeconds]);
+
+  const handleSaveScoreToCloud = async () => {
+    if (cloudSaveStatus === 'saved' || cloudSaveStatus === 'saving') return;
+    const trimmedName = candidateName.trim();
+    if (!trimmedName) {
+      setCloudSaveStatus('error');
+      setCloudSaveError('Scholar name cannot be empty.');
+      return;
+    }
+
+    setCloudSaveStatus('saving');
+    setCloudSaveError(null);
+    try {
+      const evalResult = calculatePolymathEvaluation(activeQuestions, userAnswers, trimmedName);
+      const answeredList = Object.values(userAnswers).filter(
+        (a) => a.selectedOption !== null && a.selectedOption !== undefined
+      );
+
+      await saveAssessmentToCloud({
+        scholarName: trimmedName,
+        evaluation: evalResult,
+        scope,
+        durationSeconds: sessionSeconds,
+        answers: answeredList,
+      });
+      setCloudSaveStatus('saved');
+    } catch (err) {
+      setCloudSaveStatus('error');
+      setCloudSaveError(err instanceof Error ? err.message : 'Failed to save score to cloud.');
+    }
+  };
+
+  const handleSignInAndSave = async () => {
+    try {
+      const user = await signInWithGoogle();
+      if (user) {
+        await handleSaveScoreToCloud();
+      }
+    } catch (err) {
+      setCloudSaveStatus('error');
+      setCloudSaveError('Google Sign-In was cancelled or failed.');
+    }
+  };
 
   const handleResumeSession = () => {
     setActiveQuestions(ALL_QUESTIONS);
@@ -233,6 +282,8 @@ export default function App() {
       // ignore
     }
     setHasPersistedReport(false);
+    setCloudSaveStatus('idle');
+    setCloudSaveError(null);
     setAppStage('setup');
     setCurrentIndex(0);
     setSessionSeconds(0);
@@ -246,6 +297,8 @@ export default function App() {
       // ignore
     }
     setHasPersistedReport(false);
+    setCloudSaveStatus('idle');
+    setCloudSaveError(null);
     setCurrentIndex(0);
     setSessionSeconds(0);
     setAppStage('testing');
@@ -264,20 +317,28 @@ export default function App() {
       setCurrentIndex(0);
       setSessionSeconds(0);
       setHasPersistedReport(false);
+      setCloudSaveStatus('idle');
+      setCloudSaveError(null);
       setAppStage('testing');
     } else {
       setActiveQuestions(ALL_QUESTIONS);
       setCurrentIndex(0);
       setSessionSeconds(0);
       setHasPersistedReport(false);
+      setCloudSaveStatus('idle');
+      setCloudSaveError(null);
       setAppStage('testing');
     }
   };
 
-  // Keyboard navigation shortcuts
+  // Keyboard navigation shortcuts (ignored while typing inside input/textarea/select)
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (appStage !== 'testing') return;
+      const targetTag = (e.target as HTMLElement | null)?.tagName;
+      if (targetTag === 'INPUT' || targetTag === 'TEXTAREA' || targetTag === 'SELECT') {
+        return;
+      }
 
       if (e.key === '1' || e.key === 'a' || e.key === 'A') {
         handleSelectOption(0);
@@ -319,6 +380,9 @@ export default function App() {
         onResetAssessment={handleResetAssessment}
         onOpenAbout={() => setIsAboutModalOpen(true)}
         onOpenLeaderboard={() => setIsLeaderboardOpen(true)}
+        authUser={authUser}
+        onSignIn={() => signInWithGoogle().catch((err) => console.warn('Sign-in cancelled:', err))}
+        onSignOut={() => signOutUser().catch((err) => console.warn('Sign-out error:', err))}
         currentIndex={currentIndex}
         totalQuestions={activeQuestions.length}
         isTestActive={appStage === 'testing'}
@@ -345,17 +409,25 @@ export default function App() {
           <div className="space-y-6">
             <QuestionCard
               question={currentQuestion}
+              questions={activeQuestions}
+              allUserAnswers={userAnswers}
               currentIndex={currentIndex}
               totalQuestions={activeQuestions.length}
               answeredCount={Object.values(userAnswers).filter((a) => a.selectedOption !== null && a.selectedOption !== undefined).length}
               sessionSeconds={sessionSeconds}
               userAnswer={userAnswers[currentQuestion.id]}
               feedbackTiming={feedbackTiming}
+              candidateName={candidateName}
+              onCandidateNameChange={(name) => {
+                setCandidateName(name);
+                persistSession(userAnswers, name);
+              }}
               onSelectOption={handleSelectOption}
               onToggleFlag={handleToggleFlag}
               onNext={handleNext}
               onPrevious={handlePrevious}
               onJumpToGrid={() => setIsNavDrawerOpen(true)}
+              onJumpToQuestion={(idx) => setCurrentIndex(idx)}
             />
 
             {/* Quick Keyboard Hotkeys bar */}
@@ -376,7 +448,17 @@ export default function App() {
             evaluation={evaluation}
             questions={activeQuestions}
             userAnswers={userAnswers}
+            scope={scope}
+            authUser={authUser}
+            cloudSaveStatus={cloudSaveStatus}
+            cloudSaveError={cloudSaveError}
+            onSaveScoreToCloud={handleSaveScoreToCloud}
+            onSignInAndSave={handleSignInAndSave}
             candidateName={candidateName}
+            onCandidateNameChange={(name) => {
+              setCandidateName(name);
+              persistSession(userAnswers, name);
+            }}
             totalSessionSeconds={sessionSeconds}
             onRetake={handleRetake}
             onRetestWeakFields={handleRetestWeakFields}
@@ -401,11 +483,14 @@ export default function App() {
         onClose={() => setIsAboutModalOpen(false)}
       />
 
-      {/* Modal: Leaderboard & Empirical Question Averages */}
+      {/* Modal: Scores, Global Community Averages & Empirical Question Stats */}
       <LeaderboardModal
         isOpen={isLeaderboardOpen}
         onClose={() => setIsLeaderboardOpen(false)}
+        authUser={authUser}
         currentCandidateName={candidateName}
+        latestPq={appStage === 'report' ? evaluation.polymathQuotient : undefined}
+        latestAccuracy={appStage === 'report' ? evaluation.accuracyPercentage : undefined}
         highlightSessionId={highlightSessionId}
       />
 

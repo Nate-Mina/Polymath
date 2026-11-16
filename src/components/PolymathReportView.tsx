@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PolymathEvaluation, Question, UserAnswerRecord } from '../types/polymath';
+import { PolymathEvaluation, Question, UserAnswerRecord, AssessmentScope } from '../types/polymath';
 import { PolymathRadarChart } from './PolymathRadarChart';
 import { DomainMasteryGrid } from './DomainMasteryGrid';
 import { PerformanceHeatmap } from './PerformanceHeatmap';
@@ -7,6 +7,7 @@ import { ShareResultsModal } from './ShareResultsModal';
 import { CertificateModal } from './CertificateModal';
 import { generateShareableResultsSnippet, copyToClipboard } from '../utils/shareResults';
 import { exportPolymathCertificateAndAuditPdf } from '../utils/pdfCertificateExport';
+import { AuthUser } from '../utils/firebase';
 import {
   Award,
   CheckCircle2,
@@ -26,6 +27,10 @@ import {
   FileDown,
   User,
   Trophy,
+  Cloud,
+  Loader2,
+  LogIn,
+  AlertCircle,
 } from 'lucide-react';
 import { compareWithPreviousAttempt } from '../utils/localLeaderboard';
 
@@ -33,6 +38,13 @@ interface PolymathReportViewProps {
   evaluation: PolymathEvaluation;
   questions: Question[];
   userAnswers: Record<string, UserAnswerRecord>;
+  scope: AssessmentScope;
+  authUser: AuthUser | null;
+  cloudSaveStatus: 'idle' | 'saving' | 'saved' | 'error';
+  cloudSaveError?: string | null;
+  onSaveScoreToCloud: () => Promise<void>;
+  onSignInAndSave?: () => Promise<void>;
+  onCandidateNameChange?: (name: string) => void;
   onRetake: () => void;
   onRetestWeakFields: () => void;
   candidateName?: string;
@@ -46,6 +58,13 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
   evaluation,
   questions,
   userAnswers,
+  scope,
+  authUser,
+  cloudSaveStatus,
+  cloudSaveError,
+  onSaveScoreToCloud,
+  onSignInAndSave,
+  onCandidateNameChange,
   onRetake,
   onRetestWeakFields,
   candidateName,
@@ -61,6 +80,8 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
   const [isExportingPdf, setIsExportingPdf] = useState(false);
 
   const effectiveCandidateName = candidateName?.trim() || evaluation.candidateName || 'Guest Scholar';
+  const rawEditableName = candidateName !== undefined ? candidateName : evaluation.candidateName || '';
+  const isNameValid = rawEditableName.trim().length >= 1 && rawEditableName.trim().length <= 40;
 
   const handleExportPdf = () => {
     setIsExportingPdf(true);
@@ -306,6 +327,131 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
           </div>
         </div>
 
+        {/* Dedicated "Save Score to Cloud" Card */}
+        <div
+          className={`p-5 rounded-2xl border transition-all space-y-4 ${
+            cloudSaveStatus === 'saved'
+              ? 'bg-emerald-950/30 border-emerald-700/70'
+              : 'bg-[#090E1A]/80 border-[#D4AF37]/50 shadow-lg shadow-amber-950/20'
+          }`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#FDE68A] font-bold">
+                <Cloud className="w-4 h-4 text-[#D4AF37]" />
+                <span>Cloud Score &amp; Global Benchmark Submission</span>
+              </div>
+              <p className="text-xs text-[#94A3B8]">
+                {cloudSaveStatus === 'saved'
+                  ? 'Your score has been saved to your personal cloud profile and aggregated into the global community average.'
+                  : 'Verify your scholar name and publish your Polymath Quotient (PQ) to the community average and your personal cloud history.'}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 px-3 py-1.5 rounded-xl bg-[#0F172A] border border-[#334155] font-mono text-xs shrink-0">
+              <div>
+                <span className="text-[#94A3B8]">PQ: </span>
+                <strong className="text-[#FDE68A] text-sm">{evaluation.polymathQuotient}</strong>
+              </div>
+              <span className="text-[#334155]">|</span>
+              <div>
+                <span className="text-[#94A3B8]">Accuracy: </span>
+                <strong className="text-cyan-300 text-sm">{evaluation.accuracyPercentage}%</strong>
+              </div>
+            </div>
+          </div>
+
+          {cloudSaveStatus !== 'saved' ? (
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={rawEditableName}
+                  onChange={(e) =>
+                    onCandidateNameChange && onCandidateNameChange(e.target.value.slice(0, 40))
+                  }
+                  disabled={cloudSaveStatus === 'saving'}
+                  maxLength={40}
+                  placeholder="Confirm Scholar Name (1-40 chars)..."
+                  className={`w-full px-3.5 py-2.5 rounded-xl bg-[#0F172A] border text-xs sm:text-sm text-slate-100 placeholder-slate-500 outline-none transition-colors ${
+                    isNameValid
+                      ? 'border-[#334155] focus:border-[#D4AF37]'
+                      : 'border-rose-500/80 focus:border-rose-400'
+                  }`}
+                />
+              </div>
+
+              {!authUser ? (
+                <button
+                  onClick={onSignInAndSave}
+                  disabled={!isNameValid || cloudSaveStatus === 'saving'}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-[#D4AF37] hover:bg-[#FDE68A] transition-colors shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  {cloudSaveStatus === 'saving' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <LogIn className="w-4 h-4" />
+                  )}
+                  <span>
+                    {cloudSaveStatus === 'saving'
+                      ? 'Signing in & Saving...'
+                      : 'Sign in with Google & Save Score'}
+                  </span>
+                </button>
+              ) : (
+                <button
+                  onClick={onSaveScoreToCloud}
+                  disabled={!isNameValid || cloudSaveStatus === 'saving'}
+                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-[#D4AF37] hover:bg-[#FDE68A] transition-colors shadow-md cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                >
+                  {cloudSaveStatus === 'saving' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Cloud className="w-4 h-4" />
+                  )}
+                  <span>
+                    {cloudSaveStatus === 'saving' ? 'Saving to Cloud...' : 'Save Score to Cloud'}
+                  </span>
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#10B981]">
+                <CheckCircle2 className="w-4 h-4" />
+                <span>
+                  Saved to Cloud for &ldquo;{effectiveCandidateName}&rdquo; ·{' '}
+                  {scope.toUpperCase()}
+                </span>
+              </div>
+
+              {onOpenLeaderboard && (
+                <button
+                  onClick={onOpenLeaderboard}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-[#10B981] hover:bg-emerald-400 transition-colors cursor-pointer"
+                >
+                  <Trophy className="w-3.5 h-3.5" />
+                  <span>View Scores &amp; Averages</span>
+                </button>
+              )}
+            </div>
+          )}
+
+          {!isNameValid && cloudSaveStatus !== 'saved' && (
+            <div className="flex items-center gap-1.5 text-xs text-rose-400 font-mono">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>Scholar name cannot be blank before saving to cloud.</span>
+            </div>
+          )}
+
+          {cloudSaveError && (
+            <div className="flex items-center gap-1.5 text-xs text-rose-400 font-mono">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>{cloudSaveError}</span>
+            </div>
+          )}
+        </div>
+
         {/* Action Controls */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
           <div className="flex flex-wrap items-center gap-2">
@@ -319,15 +465,15 @@ export const PolymathReportView: React.FC<PolymathReportViewProps> = ({
               <span>View Certificate {evaluation.polymathQuotient > 70 ? '🎉' : ''}</span>
             </button>
 
-            {/* Leaderboard Button */}
+            {/* Scores & Averages Button */}
             {onOpenLeaderboard && (
               <button
                 onClick={onOpenLeaderboard}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-amber-300 bg-amber-950/60 hover:bg-amber-900/80 border border-amber-800 transition-colors shadow-md shadow-amber-950/40 cursor-pointer"
-                title="View Local High Scores & Community Firebase Test Averages"
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg text-[#FDE68A] bg-amber-950/60 hover:bg-amber-900/80 border border-[#D4AF37]/60 transition-colors shadow-md shadow-amber-950/40 cursor-pointer"
+                title="View Global Community Averages, Saved Cloud Scores & Local History"
               >
-                <Trophy className="w-3.5 h-3.5 text-amber-400" />
-                <span>Leaderboard</span>
+                <Trophy className="w-3.5 h-3.5 text-[#D4AF37]" />
+                <span>View Scores &amp; Averages</span>
               </button>
             )}
 

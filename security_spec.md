@@ -1,31 +1,37 @@
 # Security Specification: Polymath Aptitude Assessment
 
 ## 1. Data Invariants
-- `test_scores/{scoreId}`:
-  - Candidates submit assessment scores.
-  - `candidateName` must be a non-empty string between 2 and 100 characters.
-  - `score`, `correctCount`, and `totalQuestions` must be valid numeric values (`0 <= score <= 100`).
-  - Read access allows fetching leaderboard entries and public test performance.
-  - Creation requires schema validation (`isValidTestScore`).
-  - Documents cannot be mutated or deleted once submitted (immutable records to preserve score integrity).
-- `test_stats/global`:
-  - Public read for community averages (total tests completed, average score).
-  - Updates require valid aggregation fields (`totalSubmissions >= 0`, `averageScore >= 0 && <= 100`).
-- `question_stats/{questionId}`:
-  - Public read for empirical difficulty & community question accuracy.
-  - Creation and update must conform to `isValidQuestionStats` (`successRate >= 0 && <= 100`, `attemptCount >= 1`).
-  - Document IDs must match standard identifier constraints (`isValidId`).
+- `/users/{userId}/assessments/{recordId}`:
+  - Strictly private owner-only full assessment records.
+  - Only verified authenticated user (`request.auth.uid == userId`) can `read`, `create`, or `delete`.
+  - Updates are prohibited (assessment records are immutable snapshots).
+  - `scholarName` must be 1 to 40 characters; `polymathQuotient` must be bounded in `[0, 160]`; `accuracyPercentage` in `[0, 100]`; `createdAt == request.time`.
+- `/community_scores/{scoreId}`:
+  - Public zero-PII scoreboard entry. Contains NO email, phone, or private metadata.
+  - `allow get` requires `isSignedIn() && (existing().isPublic == true || isOwner(existing().userId))`.
+  - `allow list` strictly enforces `isSignedIn() && resource.data.isPublic == true` so clients cannot query non-public documents.
+  - `allow create` requires verified auth, `incoming().userId == request.auth.uid`, `incoming().isPublic == true`, `createdAt == request.time`, and strict `hasAll`/`hasOnly` keys.
+  - `allow delete` permitted only for owner (`isOwner(existing().userId)`).
+- `/community_stats/global`:
+  - Singleton aggregate document tracking `totalAttempts`, `totalPqSum`, `totalAccuracySum`, `highestPq`, and `updatedAt`.
+  - `allow get: if isSignedIn();` (`allow list: if false;`).
+  - `allow create` requires `totalAttempts == 1`, valid score bounds, and `updatedAt == request.time`.
+  - `allow update` requires exact `+1` increment (`incoming().totalAttempts == existing().totalAttempts + 1`), bounded sum deltas (`0 <= deltaPQ <= 160`, `0 <= deltaAcc <= 100`), non-decreasing `highestPq <= 160`, and `updatedAt == request.time`.
+- `/question_stats/{questionId}`:
+  - Aggregated per-question empirical accuracy and deliberation time.
+  - `allow read: if isSignedIn();`
+  - `allow create, update` require verified user, valid `questionId`, bounded numeric values (`0 <= successRate <= 100`), and `updatedAt == request.time`.
 
 ## 2. Dirty Dozen Attack Payloads
-1. Payload with 50KB name string -> Blocked by `.size() <= 100`.
-2. Negative score (`score: -10`) -> Blocked by range guard (`>= 0 && <= 100`).
-3. Impossible score (`score: 150`) -> Blocked by range guard.
-4. Overwriting an existing score document (`update`) -> Denied (scores are immutable).
-5. Deleting an existing score document -> Denied.
-6. Malformed questionId in `question_stats` with path traversal -> Blocked by `isValidId(questionId)`.
-7. Success rate > 100 in `question_stats` -> Blocked by range guard.
-8. Injection of arbitrary ghost properties -> Blocked by strict `hasAll` and `hasOnly` key validation.
-9. Blank candidate name string -> Blocked by `.size() >= 2`.
-10. String injected into numeric `totalQuestions` -> Blocked by `is number` check.
-11. Total questions equal to 0 -> Blocked by `totalQuestions > 0`.
-12. Unauthenticated write bypass attempt -> Validated against schema; anonymous/guest testing allowed for assessment submission but bounded by strict schema guards.
+1. Unauthenticated read/write to `/community_scores` or `/users/{uid}/assessments` -> Denied (`isSignedIn()` fails).
+2. Cross-user assessment read/create/delete in `/users/{otherUid}/assessments` -> Denied (`isOwner(userId)` fails).
+3. Spoofed `userId` in `/community_scores` -> Denied (`incoming().userId == request.auth.uid` fails).
+4. Setting `isPublic: false` on `/community_scores` create or listing without `where('isPublic', '==', true)` -> Denied.
+5. Client-forged `createdAt` or `updatedAt` timestamp -> Denied (`== request.time` check fails).
+6. Ghost/shadow field injection (e.g., `email: "leak@..."` or `isAdmin: true`) -> Denied by `hasOnly(...)`.
+7. Oversized `scholarName` (e.g., 500 chars) or blank name -> Denied by `size() >= 1 && size() <= 40`.
+8. Corrupting `community_stats/global` by jumping `totalAttempts` by `+50` or decrementing -> Denied by `totalAttempts == prev + 1`.
+9. Injecting absurd `polymathQuotient: 99999` into `community_stats/global` -> Denied by delta bound `<= 160`.
+10. Overwriting an existing `/community_scores/{id}` or `/users/{uid}/assessments/{id}` -> Denied (`update: if false`).
+11. Path poisoning with invalid characters or 1.5KB document ID -> Denied by `isValidId()`.
+12. Email unverified token spoof attempt -> Denied by `request.auth.token.email_verified == true`.

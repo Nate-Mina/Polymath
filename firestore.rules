@@ -2,75 +2,153 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 1. Global Default Deny
+    // 1. Global Safety Net Default Deny
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Helper functions
+    // Primitive Helpers
     function incoming() {
       return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
     }
 
     function isValidId(id) {
       return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    function isValidTestScore(data) {
-      return data.keys().hasAll(['candidateName', 'score', 'correctCount', 'totalQuestions', 'track', 'createdAt'])
-        && data.keys().hasOnly(['candidateName', 'score', 'correctCount', 'totalQuestions', 'track', 'archetype', 'rqScore', 'confidenceScore', 'timeTakenSec', 'createdAt'])
-        && data.candidateName is string && data.candidateName.size() >= 2 && data.candidateName.size() <= 100
-        && data.score is number && data.score >= 0 && data.score <= 100
+    // Validation Blueprints
+    function isValidAssessmentRecord(data, userId) {
+      return data.keys().hasAll([
+          'userId', 'scholarName', 'modeName', 'polymathQuotient',
+          'accuracyPercentage', 'confidenceScore', 'breadthIndex',
+          'archetypeName', 'archetypeTitle', 'correctCount', 'totalCount',
+          'durationSeconds', 'domainScores', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'scholarName', 'modeName', 'polymathQuotient',
+          'accuracyPercentage', 'confidenceScore', 'breadthIndex',
+          'archetypeName', 'archetypeTitle', 'correctCount', 'totalCount',
+          'durationSeconds', 'domainScores', 'createdAt'
+        ])
+        && data.userId is string && data.userId == request.auth.uid && data.userId == userId
+        && data.scholarName is string && data.scholarName.size() >= 1 && data.scholarName.size() <= 40
+        && data.modeName is string && data.modeName.size() >= 1 && data.modeName.size() <= 40
+        && data.polymathQuotient is number && data.polymathQuotient >= 0 && data.polymathQuotient <= 160
+        && data.accuracyPercentage is number && data.accuracyPercentage >= 0 && data.accuracyPercentage <= 100
+        && data.confidenceScore is number && data.confidenceScore >= 0 && data.confidenceScore <= 100
+        && data.breadthIndex is number && data.breadthIndex >= 0 && data.breadthIndex <= 100
+        && data.archetypeName is string && data.archetypeName.size() <= 100
+        && data.archetypeTitle is string && data.archetypeTitle.size() <= 100
         && data.correctCount is number && data.correctCount >= 0 && data.correctCount <= 100
-        && data.totalQuestions is number && data.totalQuestions >= 1 && data.totalQuestions <= 100
-        && data.track is string && data.track.size() <= 30
-        && (!('archetype' in data) || (data.archetype is string && data.archetype.size() <= 100))
-        && (!('rqScore' in data) || (data.rqScore is number && data.rqScore >= 0 && data.rqScore <= 300))
-        && (!('confidenceScore' in data) || (data.confidenceScore is number && data.confidenceScore >= 0 && data.confidenceScore <= 100))
-        && (!('timeTakenSec' in data) || (data.timeTakenSec is number && data.timeTakenSec >= 0))
-        && data.createdAt is string && data.createdAt.size() <= 64;
+        && data.totalCount is number && data.totalCount >= 1 && data.totalCount <= 100
+        && data.durationSeconds is number && data.durationSeconds >= 0 && data.durationSeconds <= 86400
+        && data.domainScores is map && data.domainScores.size() <= 25
+        && data.createdAt == request.time;
     }
 
-    function isValidGlobalStats(data) {
-      return data.keys().hasAll(['totalSubmissions', 'averageScore', 'totalScoreSum'])
-        && data.keys().hasOnly(['totalSubmissions', 'averageScore', 'totalScoreSum', 'fullTrackSubmissions', 'fullTrackAvgScore', 'partialTrackSubmissions', 'partialTrackAvgScore', 'updatedAt'])
-        && data.totalSubmissions is number && data.totalSubmissions >= 0
-        && data.averageScore is number && data.averageScore >= 0 && data.averageScore <= 100
-        && data.totalScoreSum is number && data.totalScoreSum >= 0;
+    function isValidCommunityScore(data) {
+      return data.keys().hasAll([
+          'userId', 'scholarName', 'polymathQuotient', 'accuracyPercentage',
+          'archetypeTitle', 'modeName', 'isPublic', 'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'userId', 'scholarName', 'polymathQuotient', 'accuracyPercentage',
+          'archetypeTitle', 'modeName', 'isPublic', 'createdAt'
+        ])
+        && data.userId is string && data.userId == request.auth.uid
+        && data.scholarName is string && data.scholarName.size() >= 1 && data.scholarName.size() <= 40
+        && data.polymathQuotient is number && data.polymathQuotient >= 0 && data.polymathQuotient <= 160
+        && data.accuracyPercentage is number && data.accuracyPercentage >= 0 && data.accuracyPercentage <= 100
+        && data.archetypeTitle is string && data.archetypeTitle.size() <= 100
+        && data.modeName is string && data.modeName.size() >= 1 && data.modeName.size() <= 40
+        && data.isPublic == true
+        && data.createdAt == request.time;
+    }
+
+    function isValidCommunityStatsCreate(data) {
+      return data.keys().hasAll(['totalAttempts', 'totalPqSum', 'totalAccuracySum', 'highestPq', 'updatedAt'])
+        && data.keys().hasOnly(['totalAttempts', 'totalPqSum', 'totalAccuracySum', 'highestPq', 'updatedAt'])
+        && data.totalAttempts == 1
+        && data.totalPqSum is number && data.totalPqSum >= 0 && data.totalPqSum <= 160
+        && data.totalAccuracySum is number && data.totalAccuracySum >= 0 && data.totalAccuracySum <= 100
+        && data.highestPq is number && data.highestPq >= 0 && data.highestPq <= 160
+        && data.updatedAt == request.time;
+    }
+
+    function isValidCommunityStatsUpdate(data, prev) {
+      return data.keys().hasAll(['totalAttempts', 'totalPqSum', 'totalAccuracySum', 'highestPq', 'updatedAt'])
+        && data.keys().hasOnly(['totalAttempts', 'totalPqSum', 'totalAccuracySum', 'highestPq', 'updatedAt'])
+        && data.totalAttempts == prev.totalAttempts + 1
+        && data.totalPqSum is number && data.totalPqSum >= prev.totalPqSum && (data.totalPqSum - prev.totalPqSum) <= 160
+        && data.totalAccuracySum is number && data.totalAccuracySum >= prev.totalAccuracySum && (data.totalAccuracySum - prev.totalAccuracySum) <= 100
+        && data.highestPq is number && data.highestPq >= prev.highestPq && data.highestPq <= 160
+        && data.updatedAt == request.time;
     }
 
     function isValidQuestionStats(data) {
-      return data.keys().hasAll(['questionId', 'attemptCount', 'correctCount', 'successRate'])
+      return data.keys().hasAll(['questionId', 'attemptCount', 'correctCount', 'successRate', 'updatedAt'])
         && data.keys().hasOnly(['questionId', 'attemptCount', 'correctCount', 'successRate', 'totalTimeSpentSec', 'avgTimeSpentSec', 'updatedAt'])
-        && data.questionId is string && data.questionId.size() <= 64
-        && data.attemptCount is number && data.attemptCount >= 0
-        && data.correctCount is number && data.correctCount >= 0
-        && data.successRate is number && data.successRate >= 0 && data.successRate <= 100;
+        && data.questionId is string && data.questionId.size() > 0 && data.questionId.size() <= 64
+        && data.attemptCount is number && data.attemptCount >= 1
+        && data.correctCount is number && data.correctCount >= 0 && data.correctCount <= data.attemptCount
+        && data.successRate is number && data.successRate >= 0 && data.successRate <= 100
+        && (!('totalTimeSpentSec' in data) || (data.totalTimeSpentSec is number && data.totalTimeSpentSec >= 0))
+        && (!('avgTimeSpentSec' in data) || (data.avgTimeSpentSec is number && data.avgTimeSpentSec >= 0))
+        && data.updatedAt == request.time;
     }
 
-    // Collection: test_scores
-    match /test_scores/{scoreId} {
-      allow read: if true;
-      allow create: if isValidId(scoreId) && isValidTestScore(incoming());
-      // Scores are immutable once submitted
-      allow update, delete: if false;
+    // 2. Private User Assessments: /users/{userId}/assessments/{recordId}
+    match /users/{userId}/assessments/{recordId} {
+      allow get: if isOwner(userId) && isValidId(recordId);
+      allow list: if isOwner(userId);
+      allow create: if isVerifiedUser() && isOwner(userId) && isValidId(recordId) && isValidAssessmentRecord(incoming(), userId);
+      allow update: if false;
+      allow delete: if isOwner(userId) && isValidId(recordId);
     }
 
-    // Collection: test_stats
-    match /test_stats/{statsDoc} {
-      allow read: if true;
-      allow create, update: if isValidId(statsDoc) && isValidGlobalStats(incoming());
+    // 3. Public Community Scores: /community_scores/{scoreId} (Zero PII)
+    match /community_scores/{scoreId} {
+      allow get: if isSignedIn() && isValidId(scoreId) && (existing().isPublic == true || isOwner(existing().userId));
+      allow list: if isSignedIn() && resource.data.isPublic == true;
+      allow create: if isVerifiedUser() && isValidId(scoreId) && isValidCommunityScore(incoming());
+      allow update: if false;
+      allow delete: if isSignedIn() && isValidId(scoreId) && isOwner(existing().userId);
+    }
+
+    // 4. Singleton Global Community Aggregate: /community_stats/global
+    match /community_stats/{statsDoc} {
+      allow get: if isSignedIn() && statsDoc == 'global';
+      allow list: if false;
+      allow create: if isVerifiedUser() && statsDoc == 'global' && isValidCommunityStatsCreate(incoming());
+      allow update: if isVerifiedUser() && statsDoc == 'global' && isValidCommunityStatsUpdate(incoming(), existing());
       allow delete: if false;
     }
 
-    // Collection: question_stats
+    // 5. Empirical Question Difficulty Stats: /question_stats/{questionId}
     match /question_stats/{questionId} {
-      allow read: if true;
-      allow create, update: if isValidId(questionId) && isValidQuestionStats(incoming());
+      allow get: if isSignedIn() && isValidId(questionId);
+      allow list: if isSignedIn() && resource.data.attemptCount >= 0;
+      allow create, update: if isVerifiedUser() && isValidId(questionId) && isValidQuestionStats(incoming());
       allow delete: if false;
     }
 
-    // Test connection probe doc for initialization verification
+    // 6. Test connection probe doc
     match /test/connection {
       allow read: if true;
     }

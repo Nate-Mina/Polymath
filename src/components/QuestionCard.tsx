@@ -1,20 +1,25 @@
 import React from 'react';
 import { Question, UserAnswerRecord, FeedbackTiming } from '../types/polymath';
-import { Bookmark, CheckCircle2, XCircle, ChevronLeft, ChevronRight, HelpCircle, Eye, Clock, Zap } from 'lucide-react';
+import { Bookmark, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Clock, Zap, User, Check } from 'lucide-react';
 
 interface QuestionCardProps {
   question: Question;
+  questions: Question[];
+  allUserAnswers: Record<string, UserAnswerRecord>;
   currentIndex: number;
   totalQuestions: number;
   answeredCount: number;
   sessionSeconds: number;
   userAnswer?: UserAnswerRecord;
   feedbackTiming: FeedbackTiming;
+  candidateName: string;
+  onCandidateNameChange: (name: string) => void;
   onSelectOption: (optionIndex: number) => void;
   onToggleFlag: () => void;
   onNext: () => void;
   onPrevious: () => void;
   onJumpToGrid: () => void;
+  onJumpToQuestion?: (index: number) => void;
 }
 
 const OPTION_LABELS = ['A', 'B', 'C', 'D'];
@@ -27,17 +32,22 @@ function formatTime(seconds: number): string {
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
   question,
+  questions,
+  allUserAnswers,
   currentIndex,
   totalQuestions,
   answeredCount,
   sessionSeconds,
   userAnswer,
   feedbackTiming,
+  candidateName,
+  onCandidateNameChange,
   onSelectOption,
   onToggleFlag,
   onNext,
   onPrevious,
   onJumpToGrid,
+  onJumpToQuestion,
 }) => {
   const selectedIndex = userAnswer?.selectedOption;
   const isAnswered = selectedIndex !== null && selectedIndex !== undefined;
@@ -52,7 +62,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
       ? 'text-amber-400 bg-amber-950/80 border-amber-800/80'
       : 'text-rose-400 bg-rose-950/80 border-rose-800/80';
 
-  // Real-time completion rate & pacing calculations
+  // Real-time completion rate & remaining count
   const completionPercentage = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
   const remainingQuestions = Math.max(0, totalQuestions - answeredCount);
 
@@ -66,16 +76,15 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     if (remainingQuestions > 0) {
       const estSeconds = remainingQuestions * avgSecondsPerQ;
       if (estSeconds < 60) {
-        estimatedRemainingText = `~${Math.max(1, Math.round(estSeconds))}s remaining`;
+        estimatedRemainingText = `~${Math.max(1, Math.round(estSeconds))}s est.`;
       } else {
         const estMins = Math.round(estSeconds / 60);
-        estimatedRemainingText = `~${estMins}m remaining`;
+        estimatedRemainingText = `~${estMins}m est.`;
       }
     } else {
       estimatedRemainingText = 'All answered!';
     }
   } else if (remainingQuestions > 0) {
-    // Default estimated pace: ~45s per problem
     const estSeconds = remainingQuestions * 45;
     const estMins = Math.round(estSeconds / 60);
     estimatedRemainingText = `~${estMins}m est. total`;
@@ -83,22 +92,27 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-4">
-      {/* Real-time Session Progress & Pacing Bar */}
-      <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-md space-y-2.5">
+      {/* 1. Segmented Progress Header & Remaining Badge */}
+      <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl shadow-md space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-          <div className="flex items-center gap-2">
-            <span className="text-slate-200 font-semibold">
-              Progress: {answeredCount} of {totalQuestions} answered
+          <div className="flex items-center gap-2.5">
+            <span className="text-slate-100 font-semibold">
+              {answeredCount} of {totalQuestions} answered
             </span>
-            <span className="text-slate-600">·</span>
-            <span className="text-cyan-400 font-bold">
-              {completionPercentage}% complete
+            <span className="text-amber-300 font-bold">
+              ({completionPercentage}%)
+            </span>
+            <span
+              className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-950/80 text-[#FDE68A] border border-[#D4AF37]/60 shadow-sm"
+              title="Questions remaining to complete this assessment"
+            >
+              {remainingQuestions} left
             </span>
           </div>
 
           <div className="flex items-center gap-3 text-slate-400">
             <span className="flex items-center gap-1.5" title="Elapsed session duration">
-              <Clock className="w-3.5 h-3.5 text-cyan-400" />
+              <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
               <span>{formatTime(sessionSeconds)}</span>
             </span>
 
@@ -111,8 +125,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
             {estimatedRemainingText && (
               <>
-                <span className="text-slate-600">·</span>
-                <span className="text-emerald-400 font-medium" title="Estimated remaining time to finish assessment">
+                <span className="text-slate-600 hidden sm:inline">·</span>
+                <span className="text-emerald-400 font-medium hidden sm:inline" title="Estimated remaining time">
                   {estimatedRemainingText}
                 </span>
               </>
@@ -120,20 +134,68 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
           </div>
         </div>
 
-        {/* Visual Progress Bar with Active Cursor */}
-        <div className="relative w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-slate-800/80">
-          {/* Answered progress fill */}
-          <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-sky-400 to-emerald-400 transition-all duration-300"
-            style={{ width: `${completionPercentage}%` }}
-          />
+        {/* Segmented Horizontal Progress Track (Completed = Renaissance Gold, Active = Warm Gold Light, Remaining = Midnight Border) */}
+        <div
+          className="flex items-center gap-[2px] w-full"
+          role="progressbar"
+          aria-valuenow={answeredCount}
+          aria-valuemin={0}
+          aria-valuemax={totalQuestions}
+        >
+          {questions.map((q, idx) => {
+            const qAns = allUserAnswers[q.id];
+            const isQAnswered = qAns && qAns.selectedOption !== null && qAns.selectedOption !== undefined;
+            const isCurrent = idx === currentIndex;
 
-          {/* Current question position tick */}
-          <div
-            className="absolute top-0 bottom-0 w-1 bg-amber-400 shadow-sm shadow-amber-400 transition-all duration-200"
-            style={{ left: `${Math.min(99, ((currentIndex) / totalQuestions) * 100)}%` }}
-            title={`Current question position: #${currentIndex + 1}`}
+            let segmentClass = 'bg-[#334155] hover:bg-slate-600';
+            if (isCurrent) {
+              segmentClass =
+                'bg-[#FDE68A] ring-1 ring-[#D4AF37] shadow-[0_0_8px_rgba(253,230,138,0.65)] scale-y-125';
+            } else if (isQAnswered) {
+              segmentClass = 'bg-[#D4AF37] hover:bg-amber-400';
+            }
+
+            return (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => onJumpToQuestion && onJumpToQuestion(idx)}
+                title={`Q${idx + 1}: ${q.fieldName} (${isCurrent ? 'Active' : isQAnswered ? 'Answered' : 'Remaining'})`}
+                className={`h-2.5 flex-1 min-w-[2px] rounded-full transition-all duration-200 cursor-pointer ${segmentClass}`}
+              />
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Sleek Top Editable Scholar Name Card */}
+      <div className="px-4 py-2.5 bg-slate-900/90 border border-slate-800 rounded-xl flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 flex-1 min-w-[220px]">
+          <div className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-[#D4AF37] shrink-0">
+            <User className="w-3.5 h-3.5" />
+          </div>
+          <label htmlFor="live-scholar-name" className="text-xs font-mono text-slate-400 shrink-0">
+            Scholar Name:
+          </label>
+          <input
+            id="live-scholar-name"
+            type="text"
+            value={candidateName}
+            onChange={(e) => onCandidateNameChange(e.target.value.slice(0, 40))}
+            maxLength={40}
+            placeholder="Enter scholar name..."
+            className="flex-1 bg-slate-950/90 border border-slate-800 focus:border-[#D4AF37] focus:ring-1 focus:ring-[#D4AF37]/50 rounded-lg px-3 py-1 text-xs font-medium text-slate-100 placeholder-slate-500 outline-none transition-colors"
           />
+        </div>
+        <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-400">
+          {candidateName.trim().length >= 1 ? (
+            <span className="text-emerald-400 flex items-center gap-1">
+              <Check className="w-3 h-3" />
+              <span>Ready for Certificate &amp; Cloud Score</span>
+            </span>
+          ) : (
+            <span className="text-amber-400">Add name for saved scores</span>
+          )}
         </div>
       </div>
       {/* Top Question Meta Ribbon */}

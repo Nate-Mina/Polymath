@@ -1,98 +1,180 @@
 {
   "entities": {
-    "TestScore": {
-      "title": "TestScore",
-      "description": "A candidate's completed examination score record",
+    "AssessmentRecord": {
+      "title": "AssessmentRecord",
+      "description": "Private full assessment record stored under a user's personal history",
       "type": "object",
       "properties": {
-        "candidateName": {
+        "userId": {
           "type": "string",
-          "description": "Candidate's declared examination identity",
-          "minLength": 2,
-          "maxLength": 100
+          "description": "Authenticated Firebase UID of the candidate",
+          "maxLength": 128
         },
-        "score": {
-          "type": "number",
-          "description": "Percentage score earned (0 to 100)"
-        },
-        "correctCount": {
-          "type": "number",
-          "description": "Total count of correct answers"
-        },
-        "totalQuestions": {
-          "type": "number",
-          "description": "Total questions presented in this session"
-        },
-        "track": {
+        "scholarName": {
           "type": "string",
-          "description": "Assessment track identifier (full, partial, etc.)",
-          "maxLength": 30
+          "description": "Candidate's declared scholar name",
+          "minLength": 1,
+          "maxLength": 40
         },
-        "archetype": {
+        "modeName": {
           "type": "string",
-          "description": "Polymath archetype classification title",
-          "maxLength": 100
+          "description": "Assessment scope/mode label",
+          "maxLength": 40
         },
-        "rqScore": {
+        "polymathQuotient": {
           "type": "number",
-          "description": "Renaissance Quotient score"
+          "description": "Primary Polymath Quotient (PQ) score"
+        },
+        "accuracyPercentage": {
+          "type": "number",
+          "description": "Percentage of correct answers (0 to 100)"
         },
         "confidenceScore": {
           "type": "number",
-          "description": "Polymath confidence rating percentage"
+          "description": "Polymath confidence score (0 to 100)"
         },
-        "timeTakenSec": {
+        "breadthIndex": {
           "type": "number",
-          "description": "Deliberation duration in seconds"
+          "description": "Uniformity / balance index across tested domains (0 to 100)"
+        },
+        "archetypeName": {
+          "type": "string",
+          "description": "Short archetype tier level",
+          "maxLength": 100
+        },
+        "archetypeTitle": {
+          "type": "string",
+          "description": "Full archetype title",
+          "maxLength": 100
+        },
+        "correctCount": {
+          "type": "number",
+          "description": "Total correct answers"
+        },
+        "totalCount": {
+          "type": "number",
+          "description": "Total questions in the assessment"
+        },
+        "durationSeconds": {
+          "type": "number",
+          "description": "Total deliberation duration in seconds"
+        },
+        "domainScores": {
+          "type": "object",
+          "description": "Map of discipline ID to accuracy percentage"
         },
         "createdAt": {
           "type": "string",
           "format": "date-time",
-          "description": "ISO timestamp of completion"
+          "description": "Server timestamp of completion"
         }
       },
-      "required": ["candidateName", "score", "correctCount", "totalQuestions", "track", "createdAt"]
+      "required": [
+        "userId",
+        "scholarName",
+        "modeName",
+        "polymathQuotient",
+        "accuracyPercentage",
+        "confidenceScore",
+        "breadthIndex",
+        "archetypeName",
+        "archetypeTitle",
+        "correctCount",
+        "totalCount",
+        "durationSeconds",
+        "domainScores",
+        "createdAt"
+      ]
     },
-    "GlobalStats": {
-      "title": "GlobalStats",
-      "description": "Global community statistics and running test score averages",
+    "CommunityScore": {
+      "title": "CommunityScore",
+      "description": "Public zero-PII scoreboard entry for the community feed",
       "type": "object",
       "properties": {
-        "totalSubmissions": {
-          "type": "number",
-          "description": "Total tests completed across all candidates"
+        "userId": {
+          "type": "string",
+          "description": "Owner Firebase UID",
+          "maxLength": 128
         },
-        "averageScore": {
-          "type": "number",
-          "description": "Mean score across all tests completed"
+        "scholarName": {
+          "type": "string",
+          "description": "Public scholar display name (1-40 chars)",
+          "minLength": 1,
+          "maxLength": 40
         },
-        "totalScoreSum": {
+        "polymathQuotient": {
           "type": "number",
-          "description": "Cumulative score sum for running mean calculation"
+          "description": "Calculated Polymath Quotient"
         },
-        "fullTrackSubmissions": {
+        "accuracyPercentage": {
           "type": "number",
-          "description": "Total submissions on the 80-question Full Comprehensive track"
+          "description": "Percentage score earned (0 to 100)"
         },
-        "fullTrackAvgScore": {
-          "type": "number",
-          "description": "Average score on the Full Comprehensive track"
+        "archetypeTitle": {
+          "type": "string",
+          "description": "Earned Polymath archetype title",
+          "maxLength": 100
         },
-        "partialTrackSubmissions": {
-          "type": "number",
-          "description": "Total submissions on the 22-question Partial Choice track"
+        "modeName": {
+          "type": "string",
+          "description": "Assessment scope/mode label",
+          "maxLength": 40
         },
-        "partialTrackAvgScore": {
+        "isPublic": {
+          "type": "boolean",
+          "description": "Must be true for community visibility"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when saved to cloud"
+        }
+      },
+      "required": [
+        "userId",
+        "scholarName",
+        "polymathQuotient",
+        "accuracyPercentage",
+        "archetypeTitle",
+        "modeName",
+        "isPublic",
+        "createdAt"
+      ]
+    },
+    "CommunityStats": {
+      "title": "CommunityStats",
+      "description": "Atomic global community aggregate for real-time PQ and accuracy averages",
+      "type": "object",
+      "properties": {
+        "totalAttempts": {
           "type": "number",
-          "description": "Average score on the Partial Choice track"
+          "description": "Total saved cloud attempts across all scholars"
+        },
+        "totalPqSum": {
+          "type": "number",
+          "description": "Cumulative sum of Polymath Quotient scores"
+        },
+        "totalAccuracySum": {
+          "type": "number",
+          "description": "Cumulative sum of accuracy percentages"
+        },
+        "highestPq": {
+          "type": "number",
+          "description": "Highest Polymath Quotient recorded in community"
         },
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Timestamp of last aggregate update"
+          "description": "Server timestamp of last aggregate update"
         }
       },
-      "required": ["totalSubmissions", "averageScore", "totalScoreSum"]
+      "required": [
+        "totalAttempts",
+        "totalPqSum",
+        "totalAccuracySum",
+        "highestPq",
+        "updatedAt"
+      ]
     },
     "QuestionStats": {
       "title": "QuestionStats",
@@ -127,20 +209,24 @@
         "updatedAt": {
           "type": "string",
           "format": "date-time",
-          "description": "Timestamp of last update"
+          "description": "Server timestamp of last update"
         }
       },
-      "required": ["questionId", "attemptCount", "correctCount", "successRate"]
+      "required": ["questionId", "attemptCount", "correctCount", "successRate", "updatedAt"]
     }
   },
   "firestore": {
-    "/test_scores/{scoreId}": {
-      "schema": { "$ref": "#/entities/TestScore" },
-      "description": "Collection of submitted candidate test scores and assessment outcomes"
+    "/users/{userId}/assessments/{recordId}": {
+      "schema": { "$ref": "#/entities/AssessmentRecord" },
+      "description": "Private owner-only full assessment history with per-domain breakdowns"
     },
-    "/test_stats/global": {
-      "schema": { "$ref": "#/entities/GlobalStats" },
-      "description": "Singleton aggregate document storing global community test averages"
+    "/community_scores/{scoreId}": {
+      "schema": { "$ref": "#/entities/CommunityScore" },
+      "description": "Public zero-PII scoreboard entries for community comparison"
+    },
+    "/community_stats/global": {
+      "schema": { "$ref": "#/entities/CommunityStats" },
+      "description": "Singleton aggregate document storing global community PQ and accuracy sums"
     },
     "/question_stats/{questionId}": {
       "schema": { "$ref": "#/entities/QuestionStats" },
